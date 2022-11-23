@@ -1,0 +1,11 @@
+{
+  "identifier" : "7D709CFC-1812-44AF-ADA9-06C04BE52FEF",
+  "ignoredFilePatterns" : [
+    ".git"
+  ],
+  "localPath" : ".",
+  "remotePath" : "\/home\/pi\/.cncjs\/pendant-shopfloor-tablet",
+  "remoteURL" : "http:\/\/cncjs.local:8000\/machine\/",
+  "server" : "CNCJS",
+  "usesPublishing" : true
+}

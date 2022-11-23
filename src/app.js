@@ -309,16 +309,16 @@ cnc.sendMove = function(cmd) {
     }
     switch (cnc.controllerType) {
     case 'Marlin':
-	if (data.startsWith('echo:')) {
+	if (data.toLowerCase().startsWith('echo:')) {
             echoData(data);
 	    stateName = data.substring(5);
 	    if (machineWorkflow == MACHINE_IDLE) {
 		machineWorkflow = MACHINE_STALL;  // Disables Start button
 	    }
-	} else if (data.startsWith('ok') && machineWorkflow == MACHINE_STALL) {
+	} else if (data.toLowerCase().startsWith('ok') && machineWorkflow == MACHINE_STALL) {
 	    stateName = 'Idle';
 	    machineWorkflow = MACHINE_IDLE;
-	} else if (data.startsWith('Error:')) {
+	} else if (data.toLowerCase().startsWith('error:')) {
             echoData(data);
 	    stateName = data;
 	}
@@ -326,16 +326,19 @@ cnc.sendMove = function(cmd) {
 	break;
     case 'Smoothie':
     case 'Grbl':
-        if (!data.startsWith('ok')) {
+        if (!data.toLowerCase().startsWith('ok')) {
             echoData(data);
         }
-	if (data.startsWith('error:')) {
+        if (data.toLowerCase().startsWith('alarm:')) {
+            stateName = data;
+        }
+	if (data.toLowerCase().startsWith('error:')) {
 	    stateName = data;
 	}
 	cnc.updateView();
 	break;
     case 'TinyG':
-        if (!data.startsWith('{"qr"')) {
+        if (!data.toLowerCase().startsWith('{"qr"')) {
             echoData(data);
         }
 
@@ -500,6 +503,26 @@ controller.on('Grbl:settings', function(data) {
             // as the savedGrblState is probably stale.
             savedGrblState = undefined;
         }
+    }
+    
+    if (settings['$32'] !== undefined) {
+        grblOperationType = Number(settings['$32']) || 0;
+        
+        if (grblOperationType == 1) {
+            $('button.laserControl').removeClass('hidden');
+            $('button.spindleControl').addClass('hidden');
+        } else {
+            $('button.laserControl').addClass('hidden');
+            $('button.spindleControl').removeClass('hidden');
+        }
+    
+        /*if (typeof savedGrblState !== 'undefined') {
+            savedGrblState.laser = grblOperationType;
+            renderGrblState(savedGrblState);
+            // Don't re-render the state if we get later settings reports,
+            // as the savedGrblState is probably stale.
+            savedGrblState = undefined;
+        }*/
     }
 });
 
@@ -716,6 +739,55 @@ setRightButton = function(isEnabled, color, text, click) {
     setButton('.btn-pause', isEnabled, color, text);
     rightButtonHandler = click;
 }
+
+cnc.switchToLaser = function() {
+    controller.command('gcode', '$32=1');
+    setTimeout(function() {
+        setTimeout(function() {
+            controller.command('gcode', '$31=0');
+            setTimeout(function() {
+                controller.command('gcode', '$$');
+            }, 800);
+        }, 800);
+     controller.command('gcode', '$30=1000');
+    },500);
+    
+}
+
+cnc.switchToSpindle = function() {
+    controller.command('gcode', '$32=0');
+    setTimeout(function() {
+        setTimeout(function() {
+            controller.command('gcode', '$31=3000');
+            setTimeout(function() {
+                controller.command('gcode', '$$');
+            }, 800);
+        }, 800);
+        controller.command('gcode', '$30=20000');
+    }, 800);
+}
+
+cnc.testLaser = function() {
+    controller.command('gcode', 'G1F1');
+    setTimeout(function() {
+        controller.command('gcode', 'M3S10');
+    }, 800);
+    
+}
+
+cnc.testSpindle = function() {
+    controller.command('gcode', 'M3 S5000');
+}
+
+cnc.testLaserOff = function() {
+    controller.command('gcode', 'M5S0');
+}
+
+cnc.testSpindleOff = function() {
+    controller.command('gcode', 'M5');
+}
+
+
 cnc.doRightButton = function() {
     if (rightButtonHandler) {
         rightButtonHandler();
@@ -873,7 +945,7 @@ cnc.updateView = function() {
 	: "<div style='color:red'>" + modal.distance + "</div>";
     $('[data-route="workspace"] [id="distance"]').html(distanceText);
 
-    if (machineWorkflow == MACHINE_RUN) {
+    /*if (machineWorkflow == MACHINE_RUN) {
 	var rateText = modal.units == 'G21'
 	    ? Number(velocity).toFixed(0) + ' mm/min'
 	    : Number(velocity).toFixed(2) + ' in/min';
@@ -881,7 +953,8 @@ cnc.updateView = function() {
     } else {
         var stateText = stateName == 'Error' ? "Error: " + errorMessage : stateName;
         $('[data-route="workspace"] [data-name="active-state"]').text(stateText);
-    }
+    }*/
+    $('[data-route="workspace"] [data-name="active-state"]').text(stateName);
 
     if (machineWorkflow == MACHINE_RUN || machineWorkflow == MACHINE_HOLD || machineWorkflow == MACHINE_STOP) {
         $('[data-route="workspace"] [id="line"]').text(receivedLines);
