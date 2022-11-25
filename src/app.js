@@ -7,6 +7,8 @@ const MACHINE_IDLE = 2;
 const MACHINE_RUN = 3;
 const MACHINE_HOLD = 4;
 
+const date = new Date();
+
 var root = window;
 var cnc = root.cnc || {};
 var controller = cnc.controller;
@@ -35,6 +37,8 @@ var elapsedTime = 0;
 var modal = {};
 var senderHold = false;
 var senderHoldReason = '';
+var grblReportingUnits = 0;  // initially undefined
+
 
 cnc.initState = function() {
     // Select the "Load GCode File" heading instead of any file
@@ -102,7 +106,7 @@ controller.on('serialport:open', function(options) {
         // report is ambiguous.  Subsequent status reports are interpreted correctly.
         // We work around that by deferring status reports until the settings report.
         // I commented this out because of https://github.com/cncjs/cncjs-shopfloor-tablet/issues/20
-        // controller.writeln('$$');
+        controller.writeln('$$');
     }
 
     root.location = '#/workspace';
@@ -149,6 +153,11 @@ cnc.goAxis = function(axis, coordinate) {
     }
 }
 
+cnc.goWorkHome = function() {
+  controller.command('gcode', 'G0 Z5'); // Raise to a safe height above workpiece.
+  controller.command('gcode', 'G0 X0 Y0')
+}
+
 cnc.moveAxis = function(axis, field) {
     cnc.goAxis(axis, document.getElementById(field).value)
 }
@@ -191,11 +200,13 @@ cnc.toggleFullscreen = function() {
 }
 
 cnc.toggleUnits = function() {
-    cnc.click();
+    //cnc.click();
     if (modal.units == 'G21') {
-	controller.command('gcode', 'G20');
+     //controller.command('gcode', '$13=1');
+	   controller.command('gcode', 'G20');
     } else {
-	controller.command('gcode', 'G21');
+      //controller.command('gcode', '$13=0');
+	   controller.command('gcode', 'G21');
     }	
     // No need to fix the button label, as that will be done by the status watcher
 }
@@ -211,7 +222,7 @@ cnc.setDistance = function(distance) {
     $('[data-route="workspace"] select[data-name="select-distance"]').val(distance);
 }
 
-cnc.click = function() { cnc.clicksound.play() }
+cnc.click = function() { /*cnc.clicksound.play()*/ }
 
 cnc.sendMove = function(cmd) {
     cnc.click();
@@ -298,14 +309,15 @@ cnc.sendMove = function(cmd) {
 };
 
     echoData = function(data) {
-        var messages = $('[data-route="workspace"] [id="messages"]');
+        var messages = $('#messages');
         messages.text(messages.text() + "\n" + data);
         messages[0].scrollTop = messages[0].scrollHeight;
     }
 
     controller.on('serialport:read', function(data) {
+    console.log(cnc.controllerType, data);
     if (data.r) {
-	cnc.line++;
+	   cnc.line++;
     }
     switch (cnc.controllerType) {
     case 'Marlin':
@@ -362,7 +374,7 @@ controller.on('serialport:write', function(data) {
     if (cnc.controllerType === 'Grbl') {
         cmd = data.split('=');
         if (cmd.length === 2 && cmd[0] === "$13") {
-            grblReportingUnits = Number(cmd[1]) || 0;
+            grblReportingUnits = parseInt(cmd[1]) || 0;
         }
     }
 });
@@ -435,6 +447,7 @@ function renderGrblState(data) {
     stateName = status.activeState;
     mpos = status.mpos;
     wpos = status.wpos;
+    
 
     // Grbl states are Idle, Run, Jog, Hold
     // The code used to allow click in Run state but that seems wrong
@@ -444,19 +457,23 @@ function renderGrblState(data) {
 
     var parserstate = data.parserstate || {};
     if (parserstate.modal) {
-	Object.assign(modal, parserstate.modal);
+	   model = Object.assign(modal, parserstate.modal);
     }
+    
+    console.log(model);
 
     // Unit conversion factor - depends on both $13 setting and parser units
     var factor = 1.0;
 
     switch (modal.units) {
-    case 'G20':
-        factor = grblReportingUnits === 0 ? 1/25.4 : 1.0 ;
-        break;
-    case 'G21':
-        factor = grblReportingUnits === 0 ? 1.0 : 25.4;
-        break;
+      case 'G20':
+          console.log('render G20');
+          factor = grblReportingUnits === 0 ? 1/25.4 : 1.0 ;
+          break;
+      case 'G21':
+          console.log('render G21');
+          factor = grblReportingUnits === 0 ? 1.0 : 25.4;
+          break;
     }
 
     mpos.x *= factor;
@@ -495,7 +512,8 @@ controller.on('Grbl:state', function(data) {
 controller.on('Grbl:settings', function(data) {
     var settings = data.settings || {};
     if (settings['$13'] !== undefined) {
-        grblReportingUnits = Number(settings['$13']) || 0;
+        console.log('13 setting processing');
+        grblReportingUnits = parseInt(settings['$13']) || 0;
 
         if (typeof savedGrblState !== 'undefined') {
             renderGrblState(savedGrblState);
@@ -857,7 +875,7 @@ cnc.doRightButton = function() {
             selector.append($("<option/>").text('100'));
             selector.append($("<option/>").text('300'));
             selector.append($("<option/>").text('1000'));
-            selector.val('10');
+            //selector.val('10');
         }
     }
 
@@ -872,14 +890,14 @@ cnc.updateView = function() {
     $('[data-route="workspace"] .mdi .btn').prop('disabled', cannotClick);
     $('[data-route="workspace"] .axis-position .btn').prop('disabled', cannotClick);
     $('[data-route="workspace"] .axis-position .position').prop('disabled', cannotClick);
-
+    
     var newUnits = modal.units == 'G21' ? 'mm' : 'Inch';
-    if ($('[data-route="workspace"] [id="units"]').text() != newUnits) {
-        $('[data-route="workspace"] [id="units"]').text(newUnits);
+    if ($('.btn-units').text() != newUnits) {
+        $('.btn-units').text(newUnits);
         cnc.setJogSelector(newUnits);
     }
-    // $('[data-route="workspace"] [id="units"]').text(modal.units == 'G21' ? 'mm' : 'Inch');
-    $('[data-route="workspace"] [id="units"]').prop('disabled', cnc.controllerType == 'Marlin');
+    $('.btn-units').text(modal.units == 'G21' ? 'mm' : 'Inch');
+    //$('[data-route="workspace"] [id="units"]').prop('disabled', cnc.controllerType == 'Marlin');
 
     var green = '#86f686';
     var red = '#f64646';
@@ -1253,14 +1271,14 @@ var ctrlDown = false;
 var altDown = false;
 jogClick = function(name) {
     if (shiftDown || altDown) {
-	var distanceElement = $('[data-route="workspace"] select[data-name="select-distance"]');
-	var distance = distanceElement.val();
-	var factor = shiftDown ? 10 : 0.1;
-	distanceElement.val(distance * factor);
-	clickon(name);
-	distanceElement.val(distance);
+	    var distanceElement = $('[data-route="workspace"] select[data-name="select-distance"]');
+	    var distance = distanceElement.val();
+	    var factor = shiftDown ? 10 : 0.1;
+	    distanceElement.val(distance * factor);
+	    clickon(name);
+	    distanceElement.val(distance);
     } else {
-	clickon(name);
+	     clickon(name);
     }
 }
 

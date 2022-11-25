@@ -106,9 +106,6 @@
                                         <a role="menuitem" href="javascript:void(0)" onclick="cnc.controller.command('homing')"><i class="fa fa-home"></i>&nbsp;Homing</a>
                                     </li>
                                     <li>
-                                        <a role="menuitem" href="javascript:void(0)" onclick="cnc.controller.command('gcode', 'G28.2 A0')"><i class="fa fa-home"></i>&nbsp;Home A</a>
-                                    </li>
-                                    <li>
                                         <a role="menuitem" href="javascript:void(0)" onclick="cnc.controller.command('gcode', '$SLP')"><i class="fa fa-bed"></i>&nbsp;Sleep</a>
                                     </li>
                                     <li>
@@ -206,7 +203,7 @@
             </div>
             <div class="row no-gutter">
                 <div class="col-xs-1">
-                   <button type="button" class="btn btn-default btn-units" id="units" title="Toggle Units" onclick="cnc.toggleUnits()">
+                   <button type="button" class="btn btn-default btn-units" title="Toggle Units" onclick="cnc.toggleUnits(this)">
                       mm
                    </button>
                 </div>
@@ -373,9 +370,9 @@
                       type="button"
                       class="btn btn-default jog-xy-zero"
                       title="Set work zero"
-                      onclick="cnc.controller.command('gcode', 'G10 L20 P1 X0 Y0 Z0')"
+                      onclick="cnc.goWorkHome()"
                   >
-                      Work <i class="fa fa-home"></i>
+                      <i class="fa fa-home"></i>
                   </button>
                 </div>
                 <div class="col-xs-2">
@@ -457,7 +454,15 @@
             </div>
 
             <div class="row no-gutter">
-                <div class="col-xs-2 info-button" id="extruder-temperature">
+                <div class="col-xs-2 info-button">
+                  <button
+                      type="button"
+                      class="btn btn-default jog-xy-zero"
+                      title="Set work zero"
+                      onclick="cnc.controller.command('gcode', 'G10 L20 P1 X0 Y0 Z0')"
+                  >
+                      Set Work 0
+                  </button>
                 </div>
                 <div class="col-xs-2">
                     <button
