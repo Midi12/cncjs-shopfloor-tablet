@@ -269,7 +269,14 @@
         <div class="container-fluid">
           <div class="middle-block jog-controls">
             <div class="row no-gutter">
-                <div class="col-xs-2 info-button" id="distance">
+                <div class="col-xs-2 info-button">
+                  <button
+                      type="button"
+                      class="btn btn-secondary"
+                      onclick="cnc.probe()"
+                  >
+                      Probe Z
+                  </button>
                 </div>
                 <div class="col-xs-2">
                     <button
@@ -458,10 +465,10 @@
                   <button
                       type="button"
                       class="btn btn-default jog-xy-zero"
-                      title="Set work zero"
-                      onclick="cnc.controller.command('gcode', 'G10 L20 P1 X0 Y0 Z0')"
+                      title="Zero X,Y"
+                      onclick="cnc.controller.command('gcode', 'G10 L20 P1 X0 Y0')"
                   >
-                      Set Work 0
+                      Zero X,Y
                   </button>
                 </div>
                 <div class="col-xs-2">
