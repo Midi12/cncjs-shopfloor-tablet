@@ -590,8 +590,9 @@
                         </div>
                         <div class="col-xs-8">
                             <select class="form-control" id="filelist" data-name="select-file">
-		                <option>Load GCode File</option>
+		                          <option>Load GCode File</option>
                             </select>
+                            
                         </div>
                         <div class="col-xs-2">
                             <button
@@ -602,7 +603,7 @@
                                  >
                                 Rfrsh
                             </button>
-	                </div>
+	                      </div>
                         <div class="col-xs-2">
                             <button
                                  type="button"
@@ -613,6 +614,12 @@
                                 Load
                             </button>
                         </div>
+                        <div class="col-md-12">
+                          <div class="progress" style="height:20px; margin-top: 10px;">
+                            <div id="progress-bar" class="progress-bar" style="height:20px"></div>
+                          </div>  
+                        </div>
+                        
                     </div>
                     <div class="col-xs-4" style="display: none">
                         <textarea class="gcode" id="gcode" rows="8" placeholder="GCode File Display" spellcheck="false" readonly>
@@ -621,7 +628,7 @@
                     <div class="col-xs-6" style="height: 250px;">
 		      <canvas id="small-toolpath" class="previewer" width="100%" height="100%"></canvas>
                     </div>
-                    <div class="col-xs-12" style="margin-top: 30px;">
+                    <div class="col-xs-12" style="margin-top: 5px;">
                       <textarea class="messages form-control" id="messages" rows="1" spellcheck="false" readonly>Serial Messages</textarea>
                     </div>
                 </div>

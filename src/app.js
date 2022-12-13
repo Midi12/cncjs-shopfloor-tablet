@@ -1009,7 +1009,11 @@ $(function() {
       var percentage = receivedLines > 0 ? (receivedLines / totalLines)*100 : 0;
       var lines = receivedLines + " / " + totalLines;
       
-      $('[data-route="workspace"] [id="line"]').text(progressPercentage ? (percentage + "%") : lines);
+      var percentageString = Math.round(percentage) + "%";
+      
+      $('[data-route="workspace"] [id="line"]').text(progressPercentage ? percentageString : lines);
+      
+      $('#progress-bar').css('width', percentageString);
 
     root.displayer.reDrawTool(modal, mpos);
 
