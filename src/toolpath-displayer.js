@@ -51,6 +51,7 @@ $(function() {
         toolY = yToPixel(pos.y)-toolRadius-2;
         toolSave = tp.getImageData(toolX, toolY, toolRectWH, toolRectWH);
 
+        console.log(toolX, pos.x);
         tp.beginPath();
         tp.strokeStyle = 'magenta';
         tp.fillStyle = 'magenta';
@@ -361,6 +362,8 @@ $(function() {
             y: initialPosition.y - mposmm.y,
             z: initialPosition.z - mposmm.z
         };
+        
+        console.log('showToolPath initialPosition', initialPosition);
 
         resetBbox();
         bboxHandlers.position = initialPosition;
@@ -382,12 +385,15 @@ $(function() {
         if (toolSave != null) {
             tp.putImageData(toolSave, toolX, toolY);
             var factor = modal.units === 'G20' ? 25.4 : 1.0;
-
+            console.log('reDrawTool factor', factor);
+            console.log('reDrawTool mpos', mpos);
+            console.log('reDrawTool offset', offset);
             var dpos = {
-                x: mpos.x * factor + offset.x,
-                y: mpos.y * factor + offset.y,
-                z: mpos.z * factor + offset.z
+                x: mpos.x * factor,// + offset.x,
+                y: mpos.y * factor,// + offset.y,
+                z: mpos.z * factor// + offset.z
             };
+            console.log('reDrawTool dpos', dpos);
             drawTool(dpos);
         }
     }
