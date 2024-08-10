@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html>
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-white">
-  <div class="container mx-auto px-4 py-8">
+
+<body class="bg-gray-900 text-white max-h-screen">
+  <div class="container mx-auto px-2 py-2">
     <div class="grid grid-cols-6 gap-4 mb-4">
-      <div class="col-span-2">
+      <div class="col-span-3">
         <select class="bg-gray-800 text-white px-4 py-2 rounded">
           <option>/dev/ttyUSB0</option>
           <option>/dev/ttyUSB1</option>
@@ -22,29 +24,29 @@
         </select>
         <button class="bg-blue-500 text-white px-4 py-2 rounded ml-2">Connect</button>
       </div>
-      <div class="col-span-2">
+      <div class="col-span-1">
         <span class="text-gray-400">Status: <span class="text-green-500">Connected</span></span>
       </div>
       <div class="col-span-2 text-right">
         <button class="bg-gray-800 text-white px-4 py-2 rounded">Commands ▼</button>
       </div>
     </div>
-    <div class="grid grid-cols-8 gap-4 mb-4">
-      <div class="col-span-2">
-        <span class="text-gray-400">X: <span class="text-white">0.000</span></span>
-      </div>
-      <div class="col-span-2">
-        <span class="text-gray-400">Y: <span class="text-white">0.000</span></span>
-      </div>
-      <div class="col-span-2">
-        <span class="text-gray-400">Z: <span class="text-white">0.000</span></span>
-      </div>
-      <div class="col-span-2 text-right">
-        <span class="text-gray-400">Spindle: <span class="text-white">0 RPM</span></span>
-      </div>
-    </div>
     <div class="grid grid-cols-12 gap-4 mb-4">
-      <div class="col-span-4">
+      <div class="col-span-6">
+        <div class="grid grid-cols-8 gap-x-0 gap-y-4">
+          <div class="col-span-2">
+            <span class="text-gray-400">X: <span class="text-white">0.000</span></span>
+          </div>
+          <div class="col-span-2">
+            <span class="text-gray-400">Y: <span class="text-white">0.000</span></span>
+          </div>
+          <div class="col-span-2">
+            <span class="text-gray-400">Z: <span class="text-white">0.000</span></span>
+          </div>
+          <div class="col-span-2">
+            <span class="text-gray-400">Spindle: <span class="text-white whitespace-nowrap">0 RPM</span></span>
+          </div>
+        </div>
         <div class="grid grid-cols-3 gap-2">
           <button class="bg-gray-800 text-white px-4 py-2 rounded">Probe Z</button>
           <button class="bg-gray-800 text-white px-4 py-2 rounded">Y+</button>
@@ -55,12 +57,10 @@
           <button class="bg-gray-800 text-white px-4 py-2 rounded">Zero XY</button>
           <button class="bg-gray-800 text-white px-4 py-2 rounded">Y-</button>
           <button class="bg-gray-800 text-white px-4 py-2 rounded">Z-</button>
+          <button class="bg-gray-800 text-white px-4 py-2 rounded mb-2 w-full">Custom</button>
+          <button class="bg-gray-800 text-white px-4 py-2 rounded mb-2 w-full">Spindle On/Off</button>
+          <button class="bg-gray-800 text-white px-4 py-2 rounded w-full">Custom</button>
         </div>
-      </div>
-      <div class="col-span-2">
-        <button class="bg-gray-800 text-white px-4 py-2 rounded mb-2 w-full">Custom</button>
-        <button class="bg-gray-800 text-white px-4 py-2 rounded mb-2 w-full">Spindle On/Off</button>
-        <button class="bg-gray-800 text-white px-4 py-2 rounded w-full">Custom</button>
       </div>
       <div class="col-span-6 bg-gray-800 rounded h-64"></div>
     </div>
@@ -95,4 +95,5 @@
     </div>
   </div>
 </body>
+
 </html>
