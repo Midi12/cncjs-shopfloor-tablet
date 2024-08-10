@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="vendor/tailwind/tailwind.min.css"></script>
 </head>
 
 <body class="bg-gray-900 text-white max-h-screen">
@@ -31,38 +31,30 @@
         <button class="bg-gray-800 text-white px-4 py-2 rounded">Commands ▼</button>
       </div>
     </div>
-    <div class="grid grid-cols-12 gap-4 mb-4">
-      <div class="col-span-6">
-        <div class="grid grid-cols-8 gap-x-0 gap-y-4">
-          <div class="col-span-2">
+    <div class="grid grid-cols-12 gap-4 mb-4 h-64">
+      <div class="col-span-6 h-full">
+        <div class="grid grid-cols-4 gap-2 h-full ">
+          <div class="col-span-4 gap-2">
             <span class="text-gray-400">X: <span class="text-white">0.000</span></span>
-          </div>
-          <div class="col-span-2">
             <span class="text-gray-400">Y: <span class="text-white">0.000</span></span>
-          </div>
-          <div class="col-span-2">
             <span class="text-gray-400">Z: <span class="text-white">0.000</span></span>
-          </div>
-          <div class="col-span-2">
             <span class="text-gray-400">Spindle: <span class="text-white whitespace-nowrap">0 RPM</span></span>
           </div>
-        </div>
-        <div class="grid grid-cols-3 gap-2">
           <button class="bg-gray-800 text-white px-4 py-2 rounded">Probe Z</button>
           <button class="bg-gray-800 text-white px-4 py-2 rounded">Y+</button>
           <button class="bg-gray-800 text-white px-4 py-2 rounded">Z+</button>
+          <button class="bg-gray-800 text-white px-4 py-2 rounded">Custom</button>
           <button class="bg-gray-800 text-white px-4 py-2 rounded">X-</button>
           <button class="bg-gray-800 text-white px-4 py-2 rounded">Home</button>
           <button class="bg-gray-800 text-white px-4 py-2 rounded">X+</button>
+          <button class="bg-gray-800 text-white px-4 py-2 rounded">Spindle On/Off</button>
           <button class="bg-gray-800 text-white px-4 py-2 rounded">Zero XY</button>
           <button class="bg-gray-800 text-white px-4 py-2 rounded">Y-</button>
           <button class="bg-gray-800 text-white px-4 py-2 rounded">Z-</button>
-          <button class="bg-gray-800 text-white px-4 py-2 rounded mb-2 w-full">Custom</button>
-          <button class="bg-gray-800 text-white px-4 py-2 rounded mb-2 w-full">Spindle On/Off</button>
-          <button class="bg-gray-800 text-white px-4 py-2 rounded w-full">Custom</button>
+          <button class="bg-gray-800 text-white px-4 py-2 rounded">Custom</button>
         </div>
       </div>
-      <div class="col-span-6 bg-gray-800 rounded h-64"></div>
+      <div class="col-span-6 bg-gray-800 rounded h-full"></div>
     </div>
     <div class="grid grid-cols-6 gap-4 mb-4">
       <div class="col-span-2">
