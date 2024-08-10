@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white">
+  <div class="container mx-auto px-4 py-8">
+    <div class="grid grid-cols-6 gap-4 mb-4">
+      <div class="col-span-2">
+        <select class="bg-gray-800 text-white px-4 py-2 rounded">
+          <option>/dev/ttyUSB0</option>
+          <option>/dev/ttyUSB1</option>
+        </select>
+        <select class="bg-gray-800 text-white px-4 py-2 rounded ml-2">
+          <option>9600</option>
+          <option>19200</option>
+          <option>38400</option>
+          <option>57600</option>
+          <option>115200</option>
+        </select>
+        <button class="bg-blue-500 text-white px-4 py-2 rounded ml-2">Connect</button>
+      </div>
+      <div class="col-span-2">
+        <span class="text-gray-400">Status: <span class="text-green-500">Connected</span></span>
+      </div>
+      <div class="col-span-2 text-right">
+        <button class="bg-gray-800 text-white px-4 py-2 rounded">Commands ▼</button>
+      </div>
+    </div>
+    <div class="grid grid-cols-8 gap-4 mb-4">
+      <div class="col-span-2">
+        <span class="text-gray-400">X: <span class="text-white">0.000</span></span>
+      </div>
+      <div class="col-span-2">
+        <span class="text-gray-400">Y: <span class="text-white">0.000</span></span>
+      </div>
+      <div class="col-span-2">
+        <span class="text-gray-400">Z: <span class="text-white">0.000</span></span>
+      </div>
+      <div class="col-span-2 text-right">
+        <span class="text-gray-400">Spindle: <span class="text-white">0 RPM</span></span>
+      </div>
+    </div>
+    <div class="grid grid-cols-12 gap-4 mb-4">
+      <div class="col-span-4">
+        <div class="grid grid-cols-3 gap-2">
+          <button class="bg-gray-800 text-white px-4 py-2 rounded">Probe Z</button>
+          <button class="bg-gray-800 text-white px-4 py-2 rounded">Y+</button>
+          <button class="bg-gray-800 text-white px-4 py-2 rounded">Z+</button>
+          <button class="bg-gray-800 text-white px-4 py-2 rounded">X-</button>
+          <button class="bg-gray-800 text-white px-4 py-2 rounded">Home</button>
+          <button class="bg-gray-800 text-white px-4 py-2 rounded">X+</button>
+          <button class="bg-gray-800 text-white px-4 py-2 rounded">Zero XY</button>
+          <button class="bg-gray-800 text-white px-4 py-2 rounded">Y-</button>
+          <button class="bg-gray-800 text-white px-4 py-2 rounded">Z-</button>
+        </div>
+      </div>
+      <div class="col-span-2">
+        <button class="bg-gray-800 text-white px-4 py-2 rounded mb-2 w-full">Custom</button>
+        <button class="bg-gray-800 text-white px-4 py-2 rounded mb-2 w-full">Spindle On/Off</button>
+        <button class="bg-gray-800 text-white px-4 py-2 rounded w-full">Custom</button>
+      </div>
+      <div class="col-span-6 bg-gray-800 rounded h-64"></div>
+    </div>
+    <div class="grid grid-cols-6 gap-4 mb-4">
+      <div class="col-span-2">
+        <select class="bg-gray-800 text-white px-4 py-2 rounded w-full">
+          <option>gcode1.nc</option>
+          <option>gcode2.nc</option>
+          <option>gcode3.nc</option>
+        </select>
+      </div>
+      <div class="col-span-1">
+        <button class="bg-gray-800 text-white px-4 py-2 rounded w-full">Refresh</button>
+      </div>
+      <div class="col-span-1">
+        <button class="bg-gray-800 text-white px-4 py-2 rounded w-full">Load</button>
+      </div>
+      <div class="col-span-1">
+        <button class="bg-gray-800 text-white px-4 py-2 rounded w-full">Start/Pause</button>
+      </div>
+      <div class="col-span-1">
+        <button class="bg-gray-800 text-white px-4 py-2 rounded w-full">Lock/Unlock</button>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4">
+      <div class="bg-gray-800 rounded p-4 h-48 overflow-y-scroll">
+        GRBL Message Log
+      </div>
+      <div class="bg-gray-800 rounded p-4 h-48 overflow-y-scroll">
+        Debug Message Log
+      </div>
+    </div>
+  </div>
+</body>
+</html>
