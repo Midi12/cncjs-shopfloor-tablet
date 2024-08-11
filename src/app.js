@@ -54,6 +54,8 @@ $(function() {
     userStopRequested = false;
     oldState = null;
     probing = false;
+
+    $('[data-route="workspace"] [data-name="active-state"]').text('Disconnected');
   }
 
   controller.on('serialport:list', function(list) {
@@ -115,6 +117,8 @@ $(function() {
       controller.writeln('$$');
     }
 
+    $('[data-route="workspace"] [data-name="active-state"]').text('Connected');
+
     root.location = '#/workspace';
   });
 
@@ -129,7 +133,7 @@ $(function() {
     $('[data-route="connection"] [data-name="btn-open"]').prop('disabled', false);
     $('[data-route="connection"] [data-name="btn-close"]').prop('disabled', true);
 
-    $('[data-route="workspace"] [data-name="active-state"]').text('NoConnect');
+    $('[data-route="workspace"] [data-name="active-state"]').text('Disconnected');
 
     root.location = '#/connection';
   });
@@ -599,7 +603,7 @@ $(function() {
     // Marlin does not have a stalled state and it
     // does not report its actual state, so we move
     // to idle state automatically.
-    if (!stateName || stateName == 'NoConnect') {
+    if (!stateName || stateName == 'Disconnected') {
       machineWorkflow = MACHINE_IDLE;
       stateName = "Idle";
     }
@@ -1301,7 +1305,7 @@ $(function() {
   // Workspace
   //
   $('[data-route="workspace"] [data-name="btn-dropdown"]').dropdown();
-  $('[data-route="workspace"] [data-name="active-state"]').text('NoConnect');
+  $('[data-route="workspace"] [data-name="active-state"]').text('Disconnected');
   $('[data-route="workspace"] select[data-name="select-distance"]').val('1');
 
   cycleDistance = function(up) {
