@@ -25,7 +25,7 @@
         </select>
         <button class="bg-blue-500 text-white px-4 py-2 rounded ml-2">Connect</button>
       </div>
-      <div class="col-span-1">
+      <div class="col-span-1 mt-2">
         <span class="text-gray-400">Status: <span class="text-green-500">Connected</span></span>
       </div>
       <div class="col-span-2 text-right">
@@ -34,12 +34,14 @@
     </div>
     <div class="grid grid-cols-12 gap-4 mb-4 h-64">
       <div class="col-span-6 h-full">
-        <div class="grid grid-cols-4 gap-2 h-full ">
-          <div class="col-span-4 gap-2">
-            <span class="text-gray-400">X: <span class="text-white">0.000</span></span>
-            <span class="text-gray-400">Y: <span class="text-white">0.000</span></span>
-            <span class="text-gray-400">Z: <span class="text-white">0.000</span></span>
-            <span class="text-gray-400">Spindle: <span class="text-white whitespace-nowrap">0 RPM</span></span>
+        <div class="grid grid-cols-4 gap-2 h-full">
+          <div class="col-span-2 text-justify">
+            <span class="text-gray-400 text-nowrap">X: <span class="text-white">0.000</span></span>
+            <span class="text-gray-400 text-nowrap">Y: <span class="text-white">0.000</span></span>
+            <span class="text-gray-400 text-nowrap">Z: <span class="text-white">0.000</span></span>
+          </div>
+          <div class="col-span-2 text-right">
+            <span class="text-gray-400 text-nowrap">Spindle: <span class="text-white whitespace-nowrap">00000 RPM</span></span>
           </div>
           <button class="bg-gray-800 text-white px-4 py-2 rounded">Probe Z</button>
           <button class="bg-gray-800 text-white px-4 py-2 rounded">Y+</button>
