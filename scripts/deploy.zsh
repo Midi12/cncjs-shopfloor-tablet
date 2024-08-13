@@ -11,7 +11,7 @@ delete_remote=false
 local_src_dir="./src"
 remote_host="cncpi.local"
 remote_user="cncpi"
-remote_dest_dir="/home/cncpi/.cncjs/cncjs-shopfloor-tablet"
+remote_dest_dir="/home/cncpi/.cncjs/cncjs-shopfloor-tablet/src"
 
 # Parse command-line options
 while [[ "$#" -gt 0 ]]; do
@@ -39,14 +39,9 @@ if [[ ! -d "$local_src_dir" ]]; then
   error_exit "Local source directory '$local_src_dir' does not exist."
 fi
 
-# Check if SSH is installed
-if ! command -v ssh >/dev/null 2>&1; then
-  error_exit "SSH is not installed. Please install SSH and try again."
-fi
-
-# Check if SCP is installed
-if ! command -v scp >/dev/null 2>&1; then
-  error_exit "SCP is not installed. Please install SCP and try again."
+# Check if rsync is installed
+if ! command -v rsync >/dev/null 2>&1; then
+  error_exit "rsync is not installed. Please install rsync and try again."
 fi
 
 # Test SSH connection to the remote server
@@ -59,11 +54,8 @@ if [[ "$delete_remote" = true ]]; then
   ssh "$remote_user@$remote_host" "rm -rf '$remote_dest_dir'"
 fi
 
-# Create the remote destination directory
-ssh "$remote_user@$remote_host" "mkdir -p '$remote_dest_dir'"
-
-# Deploy the src/ folder to the remote server
-scp -r "$local_src_dir" "$remote_user@$remote_host:$remote_dest_dir"
+# Sync the local src/ folder with the remote destination directory
+rsync -avz --delete -e "ssh" "$local_src_dir/" "$remote_user@$remote_host:$remote_dest_dir"
 
 echo "Deployment completed successfully."
 echo "Source directory: $local_src_dir"
