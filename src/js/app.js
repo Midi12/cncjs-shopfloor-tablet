@@ -163,23 +163,159 @@ var app = {
         debugLogPanel.scrollTop = debugLogPanel.scrollHeight;
     },
 
+    setConnectButtonState: function (connected) {
+        var connectButton = document.getElementById('connectButton');
+        if (connected) {
+            connectButton.textContent = 'Disconnect';
+            connectButton.classList.remove('bg-blue-500');
+            connectButton.classList.add('bg-red-500');
+            connectButton.onclick = app.disconnectPort;
+        } else {
+            connectButton.textContent = 'Connect';
+            connectButton.classList.remove('bg-red-500');
+            connectButton.classList.add('bg-blue-500');
+            connectButton.onclick = app.connectPort;
+        }
+    },
+
+    setButtonState: function (buttonId, enabled) {
+        var button = document.getElementById(buttonId);
+        if (enabled) {
+            button.removeAttribute('disabled');
+            button.classList.remove('bg-gray-500', 'cursor-not-allowed');
+            button.classList.add('bg-gray-800', 'hover:bg-gray-700');
+        } else {
+            button.setAttribute('disabled', 'true');
+            button.classList.remove('bg-gray-800', 'hover:bg-gray-700');
+            button.classList.add('bg-gray-500', 'cursor-not-allowed');
+        }
+    },
+
+    setConnectionStatus: function (element, connected) {
+        var statusElement = document.getElementById(element);
+        var valueElement = statusElement.querySelector('span');
+
+        if (connected) {
+            valueElement.textContent = 'Connected';
+            valueElement.classList.remove('text-red-500');
+            valueElement.classList.add('text-green-500');
+        } else {
+            valueElement.textContent = 'Disconnected';
+            valueElement.classList.remove('text-green-500');
+            valueElement.classList.add('text-red-500');
+        }
+    },
+
+    setStats: function (element, value, pad, unit) {
+        var statElement = document.getElementById(element);
+        var valueElement = statElement.querySelector('span');
+        valueElement.textContent = value.toString().padStart(pad, '0') + ' ' + unit;
+    },
+
+    setCpuStats: function (value) {
+        this.setStats('cpuStat', value, 4, 'Mhz');
+    },
+
+    setMemStats: function (value) {
+        this.setStats('memStat', value, 3, 'Mb');
+    },
+
+    setSwapStats: function (value) {
+        this.setStats('swapStat', value, 4, 'Mb');
+    },
+
+    setTempStats: function (value) {
+        this.setStats('tempStat', value, 2, '°C');
+    },
+
+    setCoordinates: function (axis, value) {
+        var coordinatesElement = document.getElementById(axis + 'Coordinate');
+        var valueElement = coordinatesElement.querySelector('span');
+        valueElement.textContent = value.toFixed(3);
+    },
+
+    setSpindleSpeed: function (speed) {
+        var spindleElement = document.getElementById('spindleSpeed');
+        var valueElement = spindleElement.querySelector('span');
+        valueElement.textContent = speed.toString().padStart(5, '0') + ' RPM';
+    },
+
+    setDefaultState: function () {
+        // Generate list of available ports
+        socket.emit('list');
+
+        // Set connect button to enabled and in connect state
+        this.setConnectButtonState(false);
+
+        // Set refresh, load, start, and lock buttons to disabled state
+        this.setButtonState('refreshButton', false);
+        this.setButtonState('loadButton', false);
+        this.setButtonState('startPauseButton', false);
+        this.setButtonState('lockUnlockButton', false);
+
+        // Set port and cncjs connection status to disconnected
+        this.setConnectionStatus('portStatus', false);
+        this.setConnectionStatus('cncjsStatus', false);
+
+        // Set CPU, memory, swap, and temperature stats to 0
+        this.setCpuStats(0);
+        this.setMemStats(0);
+        this.setSwapStats(0);
+        this.setTempStats(0);
+
+        // Set X, Y, Z coordinates and spindle speed to 0
+        this.setCoordinates('x', 0);
+        this.setCoordinates('y', 0);
+        this.setCoordinates('z', 0);
+        this.setSpindleSpeed(0);
+    },
+
     init: function () {
-        document.getElementById('connectButton').onclick = app.connectPort;
-        document.getElementById('refreshButton').onclick = app.refreshGCodeList;
-        document.getElementById('loadButton').onclick = app.loadGCode;
-        document.getElementById('startPauseButton').onclick = app.startPauseJob;
-        document.getElementById('lockUnlockButton').onclick = app.unlockMachine;
+        document.getElementById('connectButton').onclick = this.connectPort;
+        document.getElementById('refreshButton').onclick = this.refreshGCodeList;
+        document.getElementById('loadButton').onclick = this.loadGCode;
+        document.getElementById('startPauseButton').onclick = this.startPauseJob;
+        document.getElementById('lockUnlockButton').onclick = this.unlockMachine;
 
         socket.on('status', function (status) {
-            app.updateCoordinates(status.machine.position);
-            app.updateSpindleSpeed(status.spindle.speed);
+            this.updateCoordinates(status.machine.position);
+            this.updateSpindleSpeed(status.spindle.speed);
         });
 
         socket.on('gcode:list', function (files) {
-            app.updateGCodeList(files);
+            this.updateGCodeList(files);
         });
 
-        app.info('Application initialized.');
+        this.setDefaultState();
+
+        this_ = this;
+
+        socket.on('serialport:list', function (ports) {
+            var portSelect = document.getElementById('portSelect');
+            portSelect.innerHTML = '';
+
+            this_.debug( 'Received ' + ports.length + ' ports' );
+
+            ports.forEach(function (portObject) {
+                portText = portObject.port;
+                if (portObject.hasOwnProperty('manufacturer')) {
+                    portText += ' (' + portObject.manufacturer + ')'
+                }
+
+                this_.debug( 'Port : ' + portText );
+
+                var option = document.createElement('option');
+                option.value = portObject.port;
+                option.textContent = portText;
+                portSelect.appendChild(option);
+
+                if (portObject.hasOwnProperty('inuse') && portObject.inuse === true) {
+                    this_.debug( 'Port in use -> fire connect() callback' );
+                }
+            });
+        });
+
+        this.info('Application initialized.');
     }
 };
 
