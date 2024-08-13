@@ -10,8 +10,8 @@
 
 <body class="bg-gray-900 text-white max-h-screen">
   <div class="container mx-auto px-2 py-2">
-    <div class="grid grid-cols-6 gap-4 mb-4">
-      <div class="col-span-3">
+    <div class="grid grid-cols-12 gap-4 mb-4">
+      <div class="col-span-5">
         <select class="bg-gray-800 text-white px-4 py-2 rounded">
           <option>/dev/ttyUSB0</option>
           <option>/dev/ttyUSB1</option>
@@ -25,11 +25,20 @@
         </select>
         <button class="bg-blue-500 text-white px-4 py-2 rounded ml-2">Connect</button>
       </div>
-      <div class="col-span-1 mt-2">
-        <span class="text-gray-400">Status: <span class="text-green-500">Connected</span></span>
+      <div class="col-span-2 mt-0">
+        <span class="text-gray-400 text-nowrap">Port: <span class="text-green-500 whitespace-nowrap">Connected</span></span>
+        <span class="text-gray-400 text-nowrap">CNCjs: <span class="text-green-500 whitespace-nowrap">Connected</span></span>
       </div>
-      <div class="col-span-2 text-right">
-        <button class="bg-gray-800 text-white px-4 py-2 rounded">Commands ▼</button>
+      <div class="col-span-4 mt-0">
+        <span class="text-gray-400 text-nowrap">CPU: <span class="text-green-500 whitespace-nowrap">0000 Mhz</span></span>
+        <span class="text-gray-400 text-nowrap">Temp: <span class="text-green-500 whitespace-nowrap">00 °C</span></span>
+        <span class="text-gray-400 text-nowrap">Mem: <span class="text-green-500 whitespace-nowrap">000 Mb</span></span>
+        <span class="text-gray-400 text-nowrap">Swap: <span class="text-green-500 whitespace-nowrap">0000 Mb</span></span>
+      </div>
+      <div class="col-span-1 text-right">
+        <button class="bg-gray-800 text-white px-4 py-2 rounded"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+        </button>
       </div>
     </div>
     <div class="grid grid-cols-12 gap-4 mb-4 h-64">
