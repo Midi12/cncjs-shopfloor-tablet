@@ -35,6 +35,20 @@ var gApp = {
     selectedPort: null,
     selectedBaudRate: null,
 
+    checkCncjsServer: function (app) {
+        url = document.location;
+
+        ping = new XMLHttpRequest();
+        ping.onreadystatechange = function () {
+
+            if (ping.readyState == 4) {
+                app.setConnectionStatus('cncjsStatus', ping.status == 200)
+            }
+        }
+        ping.open("GET", url, true);
+        ping.send();
+    },
+
     connectPort: function (app) {
         app.setEnabledProperty('connectButton', false);
         var selectedPort = document.getElementById('portSelect').value;
@@ -53,6 +67,14 @@ var gApp = {
             app.selectedBaudRate = Number(selectedBaudRate);
             app.info('Connected to ' + selectedPort);
             app.setConnectionStatus('portStatus', true);
+
+            app.setButtonState('refreshButton', true);
+            app.setButtonState('loadButton', true);
+            app.setButtonState('startPauseButton', true);
+            app.setButtonState('lockUnlockButton', true);
+
+            app.setPadState(app, true);
+
         });
 
         socket.on('serialport:error', function (err) {
@@ -62,11 +84,18 @@ var gApp = {
             app.selectedBaudRate = null;
             app.setConnectButtonState(app, false);
             app.setConnectionStatus('portStatus', false);
+
+            app.setButtonState('refreshButton', false);
+            app.setButtonState('loadButton', false);
+            app.setButtonState('startPauseButton', false);
+            app.setButtonState('lockUnlockButton', false);
+
+            app.setPadState(app, false);
         });
     },
 
     disconnectPort: function (app) {
-        app.info('Disconnecting from '+ app.selectedPort);
+        app.info('Disconnecting from ' + app.selectedPort);
 
         socket.emit('close');
 
@@ -74,6 +103,13 @@ var gApp = {
         app.selectedPort = null;
         app.selectedBaudRate = null;
         app.setConnectionStatus('portStatus', false);
+
+        app.setButtonState('refreshButton', false);
+        app.setButtonState('loadButton', false);
+        app.setButtonState('startPauseButton', false);
+        app.setButtonState('lockUnlockButton', false);
+
+        app.setPadState(app, false);
     },
 
     updateGCodeList: function (files) {
@@ -172,16 +208,16 @@ var gApp = {
             connectButton.textContent = 'Disconnect';
             connectButton.classList.remove('bg-blue-500');
             connectButton.classList.add('bg-red-500');
-            connectButton.onclick = function() { app.disconnectPort(app) };
+            connectButton.onclick = function () { app.disconnectPort(app) };
         } else {
             connectButton.textContent = 'Connect';
             connectButton.classList.remove('bg-red-500');
             connectButton.classList.add('bg-blue-500');
-            connectButton.onclick = function() { app.connectPort(app) };
+            connectButton.onclick = function () { app.connectPort(app) };
         }
     },
 
-    setEnabledProperty: function(elementId, state) {
+    setEnabledProperty: function (elementId, state) {
         var element = document.getElementById(elementId);
         element.enabled = state;
     },
@@ -296,11 +332,11 @@ var gApp = {
     },
 
     init: function (app) {
-        document.getElementById('connectButton').onclick = function() { this.connectPort(app) };
-        document.getElementById('refreshButton').onclick = function() { this.refreshGCodeList(app) };
-        document.getElementById('loadButton').onclick = function() { this.loadGCode(app) };
-        document.getElementById('startPauseButton').onclick = function() { this.startPauseJob(app) };
-        document.getElementById('lockUnlockButton').onclick = function() { this.unlockMachine(app) };
+        document.getElementById('connectButton').onclick = function () { this.connectPort(app) };
+        document.getElementById('refreshButton').onclick = function () { this.refreshGCodeList(app) };
+        document.getElementById('loadButton').onclick = function () { this.loadGCode(app) };
+        document.getElementById('startPauseButton').onclick = function () { this.startPauseJob(app) };
+        document.getElementById('lockUnlockButton').onclick = function () { this.unlockMachine(app) };
 
         socket.on('status', function (status) {
             app.setCoordinates('x', status.machine.position.x.toFixed(3));
@@ -319,7 +355,7 @@ var gApp = {
             var portSelect = document.getElementById('portSelect');
             portSelect.innerHTML = '';
 
-            app.debug( 'Received ' + ports.length + ' ports' );
+            app.debug('Received ' + ports.length + ' ports');
 
             ports.forEach(function (portObject) {
                 portText = portObject.port;
@@ -327,7 +363,7 @@ var gApp = {
                     portText += ' (' + portObject.manufacturer + ')'
                 }
 
-                app.debug( 'Port : ' + portText );
+                app.debug('Port : ' + portText);
 
                 var option = document.createElement('option');
                 option.value = portObject.port;
@@ -335,14 +371,20 @@ var gApp = {
                 portSelect.appendChild(option);
 
                 if (portObject.hasOwnProperty('inuse') && portObject.inuse === true) {
-                    app.debug( 'Port in use, reconnecting to ' + portObject.port );
-                    
+                    app.debug('Port in use, reconnecting to ' + portObject.port);
+
                     document.getElementById('portSelect').value = portObject.port;
 
                     app.connectPort(app);
                 }
             });
         });
+
+        app.checkCncjsServer(app); // Checking rn
+
+        setInterval(() => {
+            app.checkCncjsServer(app);
+        }, 60 * 1000);
 
         app.info('Application initialized.');
     }
