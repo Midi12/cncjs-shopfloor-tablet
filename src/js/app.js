@@ -240,6 +240,21 @@ var app = {
         valueElement.textContent = speed.toString().padStart(5, '0') + ' RPM';
     },
 
+    setPadState: function(state) {
+        this.setButtonState('probeZButton', state);
+        this.setButtonState('yPlusButton', state);
+        this.setButtonState('zPlusButton', state);
+        this.setButtonState('custom1Button', state);
+        this.setButtonState('xMinusButton', state);
+        this.setButtonState('homeButton', state);
+        this.setButtonState('xPlusButton', state);
+        this.setButtonState('spindleOnOffButton', state);
+        this.setButtonState('zeroXYButton', state);
+        this.setButtonState('yMinusButton', state);
+        this.setButtonState('zMinusButton', state);
+        this.setButtonState('custom2Button', state);
+    },
+
     setDefaultState: function () {
         // Generate list of available ports
         socket.emit('list');
@@ -256,6 +271,8 @@ var app = {
         // Set port and cncjs connection status to disconnected
         this.setConnectionStatus('portStatus', false);
         this.setConnectionStatus('cncjsStatus', false);
+
+        this.setPadState(false);
 
         // Set CPU, memory, swap, and temperature stats to 0
         this.setCpuStats(0);
