@@ -5,35 +5,36 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="vendor/tailwind/tailwind.min.css"></script>
-  <script src="app/app.css"></script>
+  <link rel="stylesheet" href="css/app.css">
+  <script src="/socket.io/socket.io.js"></script>
 </head>
 
 <body class="bg-gray-900 text-white max-h-screen">
   <div class="container mx-auto px-2 py-2">
     <div class="grid grid-cols-12 gap-4 mb-4">
       <div class="col-span-5">
-        <select class="bg-gray-800 text-white px-4 py-2 rounded">
+        <select id="portSelect" class="bg-gray-800 text-white px-4 py-2 rounded">
           <option>/dev/ttyUSB0</option>
           <option>/dev/ttyUSB1</option>
         </select>
-        <select class="bg-gray-800 text-white px-4 py-2 rounded ml-2">
+        <select id="baudRateSelect" class="bg-gray-800 text-white px-4 py-2 rounded ml-2">
           <option>9600</option>
           <option>19200</option>
           <option>38400</option>
           <option>57600</option>
           <option selected>115200</option>
         </select>
-        <button class="bg-blue-500 text-white px-4 py-2 rounded ml-2">Connect</button>
+        <button id="connectButton" class="bg-blue-500 text-white px-4 py-2 rounded ml-2">Connect</button>
       </div>
       <div class="col-span-2 mt-0">
-        <span class="text-gray-400 text-nowrap">Port: <span class="text-green-500 whitespace-nowrap">Connected</span></span>
-        <span class="text-gray-400 text-nowrap">CNCjs: <span class="text-green-500 whitespace-nowrap">Connected</span></span>
+        <span id="portStatus" class="text-gray-400 text-nowrap">Port: <span class="text-green-500 whitespace-nowrap">Connected</span></span>
+        <span id="cncjsStatus" class="text-gray-400 text-nowrap">CNCjs: <span class="text-green-500 whitespace-nowrap">Connected</span></span>
       </div>
       <div class="col-span-4 mt-0">
-        <span class="text-gray-400 text-nowrap">CPU: <span class="text-green-500 whitespace-nowrap">0000 Mhz</span></span>
-        <span class="text-gray-400 text-nowrap">Temp: <span class="text-green-500 whitespace-nowrap">00 °C</span></span>
-        <span class="text-gray-400 text-nowrap">Mem: <span class="text-green-500 whitespace-nowrap">000 Mb</span></span>
-        <span class="text-gray-400 text-nowrap">Swap: <span class="text-green-500 whitespace-nowrap">0000 Mb</span></span>
+        <span id="cpuStat" class="text-gray-400 text-nowrap">CPU: <span class="text-green-500 whitespace-nowrap">0000 Mhz</span></span>
+        <span id="tempStat" class="text-gray-400 text-nowrap">Temp: <span class="text-green-500 whitespace-nowrap">00 °C</span></span>
+        <span id="memStat" class="text-gray-400 text-nowrap">Mem: <span class="text-green-500 whitespace-nowrap">000 Mb</span></span>
+        <span id="swapStat" class="text-gray-400 text-nowrap">Swap: <span class="text-green-500 whitespace-nowrap">0000 Mb</span></span>
       </div>
       <div class="col-span-1 text-right">
         <button class="bg-gray-800 text-white px-4 py-2 rounded"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
@@ -45,59 +46,60 @@
       <div class="col-span-6 h-full">
         <div class="grid grid-cols-4 gap-2 h-full">
           <div class="col-span-2 text-justify">
-            <span class="text-gray-400 text-nowrap">X: <span class="text-white">0.000</span></span>
-            <span class="text-gray-400 text-nowrap">Y: <span class="text-white">0.000</span></span>
-            <span class="text-gray-400 text-nowrap">Z: <span class="text-white">0.000</span></span>
+            <span id="xCoordinate" class="text-gray-400 text-nowrap">X: <span class="text-white">0.000</span></span>
+            <span id="yCoordinate" class="text-gray-400 text-nowrap">Y: <span class="text-white">0.000</span></span>
+            <span id="zCoordinate" class="text-gray-400 text-nowrap">Z: <span class="text-white">0.000</span></span>
           </div>
           <div class="col-span-2 text-right">
-            <span class="text-gray-400 text-nowrap">Spindle: <span class="text-white whitespace-nowrap">00000 RPM</span></span>
+            <span id="spindleSpeed" class="text-gray-400 text-nowrap">Spindle: <span class="text-white whitespace-nowrap">00000 RPM</span></span>
           </div>
-          <button class="bg-gray-800 text-white px-4 py-2 rounded">Probe Z</button>
-          <button class="bg-gray-800 text-white px-4 py-2 rounded">Y+</button>
-          <button class="bg-gray-800 text-white px-4 py-2 rounded">Z+</button>
-          <button class="bg-gray-800 text-white px-4 py-2 rounded">Custom</button>
-          <button class="bg-gray-800 text-white px-4 py-2 rounded">X-</button>
-          <button class="bg-gray-800 text-white px-4 py-2 rounded">Home</button>
-          <button class="bg-gray-800 text-white px-4 py-2 rounded">X+</button>
-          <button class="bg-gray-800 text-white px-4 py-2 rounded">Spindle On/Off</button>
-          <button class="bg-gray-800 text-white px-4 py-2 rounded">Zero XY</button>
-          <button class="bg-gray-800 text-white px-4 py-2 rounded">Y-</button>
-          <button class="bg-gray-800 text-white px-4 py-2 rounded">Z-</button>
-          <button class="bg-gray-800 text-white px-4 py-2 rounded">Custom</button>
+          <button id="probeZButton" class="bg-gray-800 text-white px-4 py-2 rounded">Probe Z</button>
+          <button id="yPlusButton" class="bg-gray-800 text-white px-4 py-2 rounded">Y+</button>
+          <button id="zPlusButton" class="bg-gray-800 text-white px-4 py-2 rounded">Z+</button>
+          <button id="custom1Button" class="bg-gray-800 text-white px-4 py-2 rounded">Custom</button>
+          <button id="xMinusButton" class="bg-gray-800 text-white px-4 py-2 rounded">X-</button>
+          <button id="homeButton" class="bg-gray-800 text-white px-4 py-2 rounded">Home</button>
+          <button id="xPlusButton" class="bg-gray-800 text-white px-4 py-2 rounded">X+</button>
+          <button id="spindleOnOffButton" class="bg-gray-800 text-white px-4 py-2 rounded">Spindle On/Off</button>
+          <button id="zeroXYButton" class="bg-gray-800 text-white px-4 py-2 rounded">Zero XY</button>
+          <button id="yMinusButton" class="bg-gray-800 text-white px-4 py-2 rounded">Y-</button>
+          <button id="zMinusButton" class="bg-gray-800 text-white px-4 py-2 rounded">Z-</button>
+          <button id="custom2Button" class="bg-gray-800 text-white px-4 py-2 rounded">Custom</button>
         </div>
       </div>
       <div class="col-span-6 bg-gray-800 rounded h-full"></div>
     </div>
     <div class="grid grid-cols-6 gap-4 mb-4">
       <div class="col-span-2">
-        <select class="bg-gray-800 text-white px-4 py-2 rounded w-full">
+        <select id="gcodeSelect" class="bg-gray-800 text-white px-4 py-2 rounded w-full">
           <option>gcode1.nc</option>
           <option>gcode2.nc</option>
           <option>gcode3.nc</option>
         </select>
       </div>
       <div class="col-span-1">
-        <button class="bg-gray-800 text-white px-4 py-2 rounded w-full">Refresh</button>
+        <button id="refreshButton" class="bg-gray-800 text-white px-4 py-2 rounded w-full">Refresh</button>
       </div>
       <div class="col-span-1">
-        <button class="bg-gray-800 text-white px-4 py-2 rounded w-full">Load</button>
+        <button id="loadButton" class="bg-gray-800 text-white px-4 py-2 rounded w-full">Load</button>
       </div>
       <div class="col-span-1">
-        <button class="bg-gray-800 text-white px-4 py-2 rounded w-full">Start/Pause</button>
+        <button id="startPauseButton" class="bg-gray-800 text-white px-4 py-2 rounded w-full">Start/Pause</button>
       </div>
       <div class="col-span-1">
-        <button class="bg-gray-800 text-white px-4 py-2 rounded w-full">Lock/Unlock</button>
+        <button id="lockUnlockButton" class="bg-gray-800 text-white px-4 py-2 rounded w-full">Lock/Unlock</button>
       </div>
     </div>
     <div class="grid grid-cols-2 gap-4">
-      <div class="bg-gray-800 rounded p-4 h-48 overflow-x-hidden overflow-y-auto">
+      <div id="grblLogPanel" class="bg-gray-800 rounded p-4 h-48 overflow-x-hidden overflow-y-auto scrollbar-hide">
         GRBL Message Log
       </div>
-      <div class="bg-gray-800 rounded p-4 h-48 overflow-x-hidden overflow-y-auto">
+      <div id="debugLogPanel" class="bg-gray-800 rounded p-4 h-48 overflow-x-hidden overflow-y-auto scrollbar-hide">
         Debug Message Log
       </div>
     </div>
   </div>
+  <script src="js/app.js"></script>
 </body>
 
 </html>
