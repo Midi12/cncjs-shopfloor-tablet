@@ -31,46 +31,49 @@ var socket = root.io.connect('', {
     query: 'token=' + token
 });
 
-var app = {
-    connectPort: function () {
+var gApp = {
+    selectedPort: null,
+    selectedBaudRate: null,
+
+    connectPort: function (app) {
+        app.setEnabledProperty('connectButton', false);
         var selectedPort = document.getElementById('portSelect').value;
         var selectedBaudRate = document.getElementById('baudRateSelect').value;
+
+        app.debug('Selected Baud rate : ' + selectedBaudRate);
 
         socket.emit('open', selectedPort, {
             baudrate: Number(selectedBaudRate)
         });
 
-        socket.on('open', function () {
-            var connectButton = document.getElementById('connectButton');
-            connectButton.textContent = 'Disconnect';
-            connectButton.classList.remove('bg-blue-500');
-            connectButton.classList.add('bg-red-500');
-            connectButton.onclick = app.disconnectPort;
+        socket.on('serialport:open', function () {
+            app.setConnectButtonState(app, true);
+            app.setEnabledProperty('connectButton', true);
+            app.selectedPort = selectedPort;
+            app.selectedBaudRate = Number(selectedBaudRate);
+            app.info('Connected to ' + selectedPort);
+            app.setConnectionStatus('portStatus', true);
         });
 
-        socket.on('error', function (err) {
-            console.error('Connection error:', err);
+        socket.on('serialport:error', function (err) {
+            app.error('Connection error to' + selectedPort + ' : ' + err);
+            app.setEnabledProperty('connectButton', true);
+            app.selectedPort = null;
+            app.selectedBaudRate = null;
+            app.setConnectButtonState(app, false);
+            app.setConnectionStatus('portStatus', false);
         });
     },
 
-    disconnectPort: function () {
+    disconnectPort: function (app) {
+        app.info('Disconnecting from '+ app.selectedPort);
+
         socket.emit('close');
 
-        var connectButton = document.getElementById('connectButton');
-        connectButton.textContent = 'Connect';
-        connectButton.classList.remove('bg-red-500');
-        connectButton.classList.add('bg-blue-500');
-        connectButton.onclick = app.connectPort;
-    },
-
-    updateCoordinates: function (coordinates) {
-        document.getElementById('xCoordinate').textContent = coordinates.x.toFixed(3);
-        document.getElementById('yCoordinate').textContent = coordinates.y.toFixed(3);
-        document.getElementById('zCoordinate').textContent = coordinates.z.toFixed(3);
-    },
-
-    updateSpindleSpeed: function (speed) {
-        document.getElementById('spindleSpeed').textContent = speed;
+        app.setConnectButtonState(app, false);
+        app.selectedPort = null;
+        app.selectedBaudRate = null;
+        app.setConnectionStatus('portStatus', false);
     },
 
     updateGCodeList: function (files) {
@@ -85,16 +88,16 @@ var app = {
         });
     },
 
-    refreshGCodeList: function () {
+    refreshGCodeList: function (app) {
         socket.emit('gcode:list');
     },
 
-    loadGCode: function () {
+    loadGCode: function (app) {
         var selectedFile = document.getElementById('gcodeSelect').value;
         socket.emit('gcode:load', selectedFile);
     },
 
-    startPauseJob: function () {
+    startPauseJob: function (app) {
         var startPauseButton = document.getElementById('startPauseButton');
 
         if (startPauseButton.textContent === 'Start') {
@@ -106,7 +109,7 @@ var app = {
         }
     },
 
-    unlockMachine: function () {
+    unlockMachine: function (app) {
         socket.emit('unlock');
     },
 
@@ -163,19 +166,24 @@ var app = {
         debugLogPanel.scrollTop = debugLogPanel.scrollHeight;
     },
 
-    setConnectButtonState: function (connected) {
+    setConnectButtonState: function (app, connected) {
         var connectButton = document.getElementById('connectButton');
         if (connected) {
             connectButton.textContent = 'Disconnect';
             connectButton.classList.remove('bg-blue-500');
             connectButton.classList.add('bg-red-500');
-            connectButton.onclick = app.disconnectPort;
+            connectButton.onclick = function() { app.disconnectPort(app) };
         } else {
             connectButton.textContent = 'Connect';
             connectButton.classList.remove('bg-red-500');
             connectButton.classList.add('bg-blue-500');
-            connectButton.onclick = app.connectPort;
+            connectButton.onclick = function() { app.connectPort(app) };
         }
+    },
+
+    setEnabledProperty: function(elementId, state) {
+        var element = document.getElementById(elementId);
+        element.enabled = state;
     },
 
     setButtonState: function (buttonId, enabled) {
@@ -240,78 +248,78 @@ var app = {
         valueElement.textContent = speed.toString().padStart(5, '0') + ' RPM';
     },
 
-    setPadState: function(state) {
-        this.setButtonState('probeZButton', state);
-        this.setButtonState('yPlusButton', state);
-        this.setButtonState('zPlusButton', state);
-        this.setButtonState('custom1Button', state);
-        this.setButtonState('xMinusButton', state);
-        this.setButtonState('homeButton', state);
-        this.setButtonState('xPlusButton', state);
-        this.setButtonState('spindleOnOffButton', state);
-        this.setButtonState('zeroXYButton', state);
-        this.setButtonState('yMinusButton', state);
-        this.setButtonState('zMinusButton', state);
-        this.setButtonState('custom2Button', state);
+    setPadState: function (app, state) {
+        app.setButtonState('probeZButton', state);
+        app.setButtonState('yPlusButton', state);
+        app.setButtonState('zPlusButton', state);
+        app.setButtonState('custom1Button', state);
+        app.setButtonState('xMinusButton', state);
+        app.setButtonState('homeButton', state);
+        app.setButtonState('xPlusButton', state);
+        app.setButtonState('spindleOnOffButton', state);
+        app.setButtonState('zeroXYButton', state);
+        app.setButtonState('yMinusButton', state);
+        app.setButtonState('zMinusButton', state);
+        app.setButtonState('custom2Button', state);
     },
 
-    setDefaultState: function () {
+    setDefaultState: function (app) {
         // Generate list of available ports
         socket.emit('list');
 
         // Set connect button to enabled and in connect state
-        this.setConnectButtonState(false);
+        app.setConnectButtonState(app, false);
 
         // Set refresh, load, start, and lock buttons to disabled state
-        this.setButtonState('refreshButton', false);
-        this.setButtonState('loadButton', false);
-        this.setButtonState('startPauseButton', false);
-        this.setButtonState('lockUnlockButton', false);
+        app.setButtonState('refreshButton', false);
+        app.setButtonState('loadButton', false);
+        app.setButtonState('startPauseButton', false);
+        app.setButtonState('lockUnlockButton', false);
 
         // Set port and cncjs connection status to disconnected
-        this.setConnectionStatus('portStatus', false);
-        this.setConnectionStatus('cncjsStatus', false);
+        app.setConnectionStatus('portStatus', false);
+        app.setConnectionStatus('cncjsStatus', false);
 
-        this.setPadState(false);
+        app.setPadState(app, false);
 
         // Set CPU, memory, swap, and temperature stats to 0
-        this.setCpuStats(0);
-        this.setMemStats(0);
-        this.setSwapStats(0);
-        this.setTempStats(0);
+        app.setCpuStats(0);
+        app.setMemStats(0);
+        app.setSwapStats(0);
+        app.setTempStats(0);
 
         // Set X, Y, Z coordinates and spindle speed to 0
-        this.setCoordinates('x', 0);
-        this.setCoordinates('y', 0);
-        this.setCoordinates('z', 0);
-        this.setSpindleSpeed(0);
+        app.setCoordinates('x', 0);
+        app.setCoordinates('y', 0);
+        app.setCoordinates('z', 0);
+        app.setSpindleSpeed(0);
     },
 
-    init: function () {
-        document.getElementById('connectButton').onclick = this.connectPort;
-        document.getElementById('refreshButton').onclick = this.refreshGCodeList;
-        document.getElementById('loadButton').onclick = this.loadGCode;
-        document.getElementById('startPauseButton').onclick = this.startPauseJob;
-        document.getElementById('lockUnlockButton').onclick = this.unlockMachine;
+    init: function (app) {
+        document.getElementById('connectButton').onclick = function() { this.connectPort(app) };
+        document.getElementById('refreshButton').onclick = function() { this.refreshGCodeList(app) };
+        document.getElementById('loadButton').onclick = function() { this.loadGCode(app) };
+        document.getElementById('startPauseButton').onclick = function() { this.startPauseJob(app) };
+        document.getElementById('lockUnlockButton').onclick = function() { this.unlockMachine(app) };
 
         socket.on('status', function (status) {
-            this.updateCoordinates(status.machine.position);
-            this.updateSpindleSpeed(status.spindle.speed);
+            app.setCoordinates('x', status.machine.position.x.toFixed(3));
+            app.setCoordinates('y', status.machine.position.y.toFixed(3));
+            app.setCoordinates('z', status.machine.position.z.toFixed(3));
+            app.setSpindleSpeed(status.spindle.speed);
         });
 
         socket.on('gcode:list', function (files) {
-            this.updateGCodeList(files);
+            app.updateGCodeList(files);
         });
 
-        this.setDefaultState();
-
-        this_ = this;
+        app.setDefaultState(app);
 
         socket.on('serialport:list', function (ports) {
             var portSelect = document.getElementById('portSelect');
             portSelect.innerHTML = '';
 
-            this_.debug( 'Received ' + ports.length + ' ports' );
+            app.debug( 'Received ' + ports.length + ' ports' );
 
             ports.forEach(function (portObject) {
                 portText = portObject.port;
@@ -319,7 +327,7 @@ var app = {
                     portText += ' (' + portObject.manufacturer + ')'
                 }
 
-                this_.debug( 'Port : ' + portText );
+                app.debug( 'Port : ' + portText );
 
                 var option = document.createElement('option');
                 option.value = portObject.port;
@@ -327,13 +335,17 @@ var app = {
                 portSelect.appendChild(option);
 
                 if (portObject.hasOwnProperty('inuse') && portObject.inuse === true) {
-                    this_.debug( 'Port in use -> fire connect() callback' );
+                    app.debug( 'Port in use, reconnecting to ' + portObject.port );
+                    
+                    document.getElementById('portSelect').value = portObject.port;
+
+                    app.connectPort(app);
                 }
             });
         });
 
-        this.info('Application initialized.');
+        app.info('Application initialized.');
     }
 };
 
-app.init();
+gApp.init(gApp);
