@@ -1,0 +1,3 @@
+[submodule "src/dependencies/pretty-logger"]
+	path = src/dependencies/pretty-logger
+	url = git@github.com:Midi12/pretty-logger.git
