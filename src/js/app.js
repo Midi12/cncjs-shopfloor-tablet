@@ -34,6 +34,7 @@ var socket = root.io.connect('', {
 var gApp = {
     selectedPort: null,
     selectedBaudRate: null,
+    logger: null,
 
     checkCncjsServer: function (app) {
         url = document.location;
@@ -51,51 +52,18 @@ var gApp = {
 
     connectPort: function (app) {
         app.setEnabledProperty('connectButton', false);
-        var selectedPort = document.getElementById('portSelect').value;
-        var selectedBaudRate = document.getElementById('baudRateSelect').value;
+        app.selectedPort = document.getElementById('portSelect').value;
+        app.selectedBaudRate = document.getElementById('baudRateSelect').value;
 
-        app.debug('Selected Baud rate : ' + selectedBaudRate);
+        app.logger.debug('Selected Baud rate : ' + app.selectedBaudRate);
 
-        socket.emit('open', selectedPort, {
-            baudrate: Number(selectedBaudRate)
-        });
-
-        socket.on('serialport:open', function () {
-            app.setConnectButtonState(app, true);
-            app.setEnabledProperty('connectButton', true);
-            app.selectedPort = selectedPort;
-            app.selectedBaudRate = Number(selectedBaudRate);
-            app.info('Connected to ' + selectedPort);
-            app.setConnectionStatus('portStatus', true);
-
-            app.setButtonState('refreshButton', true);
-            app.setButtonState('loadButton', true);
-            app.setButtonState('startPauseButton', true);
-            app.setButtonState('lockUnlockButton', true);
-
-            app.setPadState(app, true);
-
-        });
-
-        socket.on('serialport:error', function (err) {
-            app.error('Connection error to' + selectedPort + ' : ' + err);
-            app.setEnabledProperty('connectButton', true);
-            app.selectedPort = null;
-            app.selectedBaudRate = null;
-            app.setConnectButtonState(app, false);
-            app.setConnectionStatus('portStatus', false);
-
-            app.setButtonState('refreshButton', false);
-            app.setButtonState('loadButton', false);
-            app.setButtonState('startPauseButton', false);
-            app.setButtonState('lockUnlockButton', false);
-
-            app.setPadState(app, false);
+        socket.emit('open', app.selectedPort, {
+            baudrate: Number(app.selectedBaudRate)
         });
     },
 
     disconnectPort: function (app) {
-        app.info('Disconnecting from ' + app.selectedPort);
+        app.logger.info('Disconnecting from ' + app.selectedPort);
 
         socket.emit('close');
 
@@ -147,59 +115,6 @@ var gApp = {
 
     unlockMachine: function (app) {
         socket.emit('unlock');
-    },
-
-    debug: function (message) {
-        this.log(message, 'debug');
-    },
-
-    info: function (message) {
-        this.log(message, 'info');
-    },
-
-    warn: function (message) {
-        this.log(message, 'warn');
-    },
-
-    error: function (message) {
-        this.log(message, 'error');
-    },
-
-    fatal: function (message) {
-        this.log(message, 'fatal');
-    },
-
-    log: function (message, level) {
-        var debugLogPanel = document.getElementById('debugLogPanel');
-        var logLine = document.createElement('div');
-        var timestamp = new Date().toISOString().substr(11, 12);
-        var textColorClass = '';
-
-        level_ = ['debug', 'info', 'warn', 'error', 'fatal'].includes(level) ? level : 'default';
-
-        switch (level_) {
-            case 'debug':
-                textColorClass = 'text-cyan-400';
-                break;
-            case 'info':
-                textColorClass = 'text-gray-100';
-                break;
-            case 'warn':
-                textColorClass = 'text-yellow-500';
-                break;
-            case 'error':
-                textColorClass = 'text-red-500';
-                break;
-            case 'fatal':
-                textColorClass = 'text-purple-500';
-                break;
-            default:
-                textColorClass = 'text-gray-100';
-        }
-
-        logLine.innerHTML = '<span>[' + timestamp + ']</span> <span>[' + level_.toUpperCase() + ']</span> <span class="' + textColorClass + '">' + message + '</span>';
-        debugLogPanel.appendChild(logLine);
-        debugLogPanel.scrollTop = debugLogPanel.scrollHeight;
     },
 
     setConnectButtonState: function (app, connected) {
@@ -331,12 +246,80 @@ var gApp = {
         app.setSpindleSpeed(0);
     },
 
-    init: function (app) {
-        document.getElementById('connectButton').onclick = function () { this.connectPort(app) };
-        document.getElementById('refreshButton').onclick = function () { this.refreshGCodeList(app) };
-        document.getElementById('loadButton').onclick = function () { this.loadGCode(app) };
-        document.getElementById('startPauseButton').onclick = function () { this.startPauseJob(app) };
-        document.getElementById('lockUnlockButton').onclick = function () { this.unlockMachine(app) };
+    writePort: function (app, data, context) {
+        socket.emit('write', app.selectedPort, data, context);
+    },
+
+    writelnPort: function (app, data, context) {
+        socket.emit('writeln', app.selectedPort, data, context);
+    },
+
+    initCallbacks: function (app) {
+        socket.on('serialport:list', function (ports) {
+            var portSelect = document.getElementById('portSelect');
+            portSelect.innerHTML = '';
+
+            app.logger.debug('Received ' + ports.length + ' ports');
+
+            ports.forEach(function (portObject) {
+                portText = portObject.port;
+                if (portObject.hasOwnProperty('manufacturer')) {
+                    portText += ' (' + portObject.manufacturer + ')'
+                }
+
+                app.logger.debug('Port : ' + portText);
+
+                var option = document.createElement('option');
+                option.value = portObject.port;
+                option.textContent = portText;
+                portSelect.appendChild(option);
+
+                if (portObject.hasOwnProperty('inuse') && portObject.inuse === true) {
+                    app.logger.debug('Port in use, reconnecting to ' + portObject.port);
+
+                    document.getElementById('portSelect').value = portObject.port;
+
+                    app.connectPort(app);
+                }
+            });
+        });
+
+        socket.on('serialport:open', function (portObject) {
+            app.logger.debug(portObject);
+            
+            app.setConnectButtonState(app, true);
+            app.setEnabledProperty('connectButton', true);
+            app.selectedPort = selectedPort;
+            app.selectedBaudRate = Number(selectedBaudRate);
+            app.logger.info('Connected to ' + selectedPort);
+            app.setConnectionStatus('portStatus', true);
+
+            app.setButtonState('refreshButton', true);
+            app.setButtonState('loadButton', true);
+            app.setButtonState('startPauseButton', true);
+            app.setButtonState('lockUnlockButton', true);
+
+            app.setPadState(app, true);
+
+            app.logger.debug('send $$')
+            app.writelnPort('$$');
+        });
+
+        socket.on('serialport:error', function (err) {
+            app.logger.error('Connection error to' + selectedPort + ' : ' + err);
+            app.setEnabledProperty('connectButton', true);
+            app.selectedPort = null;
+            app.selectedBaudRate = null;
+            app.setConnectButtonState(app, false);
+            app.setConnectionStatus('portStatus', false);
+
+            app.setButtonState('refreshButton', false);
+            app.setButtonState('loadButton', false);
+            app.setButtonState('startPauseButton', false);
+            app.setButtonState('lockUnlockButton', false);
+
+            app.setPadState(app, false);
+        });
 
         socket.on('status', function (status) {
             app.setCoordinates('x', status.machine.position.x.toFixed(3));
@@ -348,37 +331,20 @@ var gApp = {
         socket.on('gcode:list', function (files) {
             app.updateGCodeList(files);
         });
+    },
+
+    init: function (app) {
+        app.logger = new PrettyLogger('debugLogPanel');
+
+        document.getElementById('connectButton').onclick = function () { this.connectPort(app) };
+        document.getElementById('refreshButton').onclick = function () { this.refreshGCodeList(app) };
+        document.getElementById('loadButton').onclick = function () { this.loadGCode(app) };
+        document.getElementById('startPauseButton').onclick = function () { this.startPauseJob(app) };
+        document.getElementById('lockUnlockButton').onclick = function () { this.unlockMachine(app) };
 
         app.setDefaultState(app);
 
-        socket.on('serialport:list', function (ports) {
-            var portSelect = document.getElementById('portSelect');
-            portSelect.innerHTML = '';
-
-            app.debug('Received ' + ports.length + ' ports');
-
-            ports.forEach(function (portObject) {
-                portText = portObject.port;
-                if (portObject.hasOwnProperty('manufacturer')) {
-                    portText += ' (' + portObject.manufacturer + ')'
-                }
-
-                app.debug('Port : ' + portText);
-
-                var option = document.createElement('option');
-                option.value = portObject.port;
-                option.textContent = portText;
-                portSelect.appendChild(option);
-
-                if (portObject.hasOwnProperty('inuse') && portObject.inuse === true) {
-                    app.debug('Port in use, reconnecting to ' + portObject.port);
-
-                    document.getElementById('portSelect').value = portObject.port;
-
-                    app.connectPort(app);
-                }
-            });
-        });
+        app.initCallbacks(app);
 
         app.checkCncjsServer(app); // Checking rn
 
@@ -386,7 +352,7 @@ var gApp = {
             app.checkCncjsServer(app);
         }, 60 * 1000);
 
-        app.info('Application initialized.');
+        app.logger.info('Application initialized.');
     }
 };
 
