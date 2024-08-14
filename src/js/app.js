@@ -285,13 +285,13 @@ var gApp = {
         });
 
         socket.on('serialport:open', function (portObject) {
-            app.logger.debug(portObject);
-            
+            //app.logger.debug(portObject);
+
             app.setConnectButtonState(app, true);
             app.setEnabledProperty('connectButton', true);
-            app.selectedPort = selectedPort;
-            app.selectedBaudRate = Number(selectedBaudRate);
-            app.logger.info('Connected to ' + selectedPort);
+            app.selectedPort = portObject.port;
+            app.selectedBaudRate = Number(portObject.baudrate);
+            app.logger.info('Connected to ' + app.selectedPort);
             app.setConnectionStatus('portStatus', true);
 
             app.setButtonState('refreshButton', true);
