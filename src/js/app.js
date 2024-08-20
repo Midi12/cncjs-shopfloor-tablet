@@ -304,10 +304,6 @@ var gApp = {
     },
 
     writeln: function(app, data, context) {
-        app.logger.debug('writeln');
-        app.logger.debug(data);
-        app.logger.debug(context);
-
         socket.emit('writeln', app.selectedPort, data, context);
     },
 
@@ -337,6 +333,26 @@ var gApp = {
     },
 
     initCallbacks: function (app) {
+        socket.on('feeder:status', function(feederStatusObject) {
+            //app.logger.debug('feeder:status feederStatusObject');
+            //app.logger.debug(feederStatusObject);
+        });
+
+        socket.on('sender:status', function(senderStatusObject) {
+            //app.logger.debug('sender:status senderStatusObject');
+            //app.logger.debug(senderStatusObject);
+        });
+
+        socket.on('serialport:read', function(readObject) {
+            //app.logger.debug('serialport:read readObject');
+            //app.logger.debug(readObject);
+        });
+
+        socket.on('serialport:write', function(writeObject) {
+            //app.logger.debug('serialport:write writeObject');
+            //app.logger.debug(writeObject);
+        });
+
         socket.on('serialport:list', function (ports) {
             var portSelect = document.getElementById('portSelect');
             portSelect.innerHTML = '';
