@@ -291,11 +291,10 @@ var gApp = {
     command: function(app, cmd) {
         var args = Array.prototype.slice.call(arguments, 2);
 
-        app.logger.debug('command');
-        app.logger.debug(cmd);
+        app.logger.debug('port: ' + app.selectedPort + 'command ' + cmd + ' args -> ');
         app.logger.debug(args);
 
-        socket.emit.apply(socket, ['command', this.port, cmd].concat(args));
+        socket.emit.apply(socket, ['command', app.selectedPort, cmd].concat(args));
     },
 
     writeln: function(app, data, context) {
@@ -307,9 +306,7 @@ var gApp = {
     },
 
     commandHome: function(app) {
-        //app.command(app, 'gcode', 'G28');
-
-        app.writeln(app, '$H');
+        app.command(app, 'homing');
     },
 
     setButtonsAction: function (app) {
@@ -396,13 +393,13 @@ var gApp = {
             app.updateGCodeList(files);
         });
 
-        socket.on('controller:state', function(state) {
-            app.logger.info('controller:state');
+        socket.on('controller:state', function(type, state) {
+            app.logger.info('controller:state ('+type+')');
             app.logger.debug(state);
         });
 
-        socket.on('controller:settings', function(settings) {
-            app.logger.info('controller:settings');
+        socket.on('controller:settings', function(type, settings) {
+            app.logger.info('controller:settings ('+type+')');
             app.logger.debug(settings);
         });
     },
