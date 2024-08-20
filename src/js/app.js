@@ -246,12 +246,79 @@ var gApp = {
         app.setSpindleSpeed(0);
     },
 
-    writePort: function (app, data, context) {
-        socket.emit('write', app.selectedPort, data, context);
+    // @param {string} cmd The command string
+    // @example Example Usage
+    // - Load G-code
+    //   controller.command('gcode:load', name, gcode, callback)
+    // - Unload G-code
+    //   controller.command('gcode:unload')
+    // - Start sending G-code
+    //   controller.command('gcode:start')
+    // - Stop sending G-code
+    //   controller.command('gcode:stop')
+    // - Pause
+    //   controller.command('gcode:pause')
+    // - Resume
+    //   controller.command('gcode:resume')
+    // - Feed Hold
+    //   controller.command('feedhold')
+    // - Cycle Start
+    //   controller.command('cyclestart')
+    // - Status Report
+    //   controller.command('statusreport')
+    // - Homing
+    //   controller.command('homing')
+    // - Sleep
+    //   controller.command('sleep')
+    // - Unlock
+    //   controller.command('unlock')
+    // - Reset
+    //   controller.command('reset')
+    // - Feed Override
+    //   controller.command('feedOverride')
+    // - Spindle Override
+    //   controller.command('spindleOverride')
+    // - Rapid Override
+    //   controller.command('rapidOverride')
+    // - G-code
+    //   controller.command('gcode', 'G0X0Y0')
+    // - Load a macro
+    //   controller.command('macro:load', '<macro-id>', { /* optional vars */ }, callback)
+    // - Run a macro
+    //   controller.command('macro:run', '<macro-id>', { /* optional vars */ }, callback)
+    // - Load file from a watch directory
+    //   controller.command('watchdir:load', '/path/to/file', callback)
+    command: function(app, cmd) {
+        var args = Array.prototype.slice.call(arguments, 2);
+
+        app.logger.debug('command');
+        app.logger.debug(cmd);
+        app.logger.debug(args);
+
+        socket.emit.apply(socket, ['command', this.port, cmd].concat(args));
     },
 
-    writelnPort: function (app, data, context) {
+    writeln: function(app, data, context) {
+        app.logger.debug('writeln');
+        app.logger.debug(data);
+        app.logger.debug(context);
+
         socket.emit('writeln', app.selectedPort, data, context);
+    },
+
+    commandHome: function(app) {
+        //app.command(app, 'gcode', 'G28');
+
+        app.writeln(app, '$H');
+    },
+
+    setButtonsAction: function (app) {
+        document.getElementById('connectButton').onclick = function () { app.connectPort(app) };
+        document.getElementById('refreshButton').onclick = function () { app.refreshGCodeList(app) };
+        document.getElementById('loadButton').onclick = function () { app.loadGCode(app) };
+        document.getElementById('startPauseButton').onclick = function () { app.startPauseJob(app) };
+        document.getElementById('lockUnlockButton').onclick = function () { app.unlockMachine(app) };
+        document.getElementById('homeButton').onclick = function () { app.commandHome(app) };
     },
 
     initCallbacks: function (app) {
@@ -300,9 +367,6 @@ var gApp = {
             app.setButtonState('lockUnlockButton', true);
 
             app.setPadState(app, true);
-
-            app.logger.debug('send $$')
-            app.writelnPort('$$');
         });
 
         socket.on('serialport:error', function (err) {
@@ -331,19 +395,23 @@ var gApp = {
         socket.on('gcode:list', function (files) {
             app.updateGCodeList(files);
         });
+
+        socket.on('controller:state', function(state) {
+            app.logger.info('controller:state');
+            app.logger.debug(state);
+        });
+
+        socket.on('controller:settings', function(settings) {
+            app.logger.info('controller:settings');
+            app.logger.debug(settings);
+        });
     },
 
     init: function (app) {
         app.logger = new PrettyLogger('debugLogPanel');
 
-        document.getElementById('connectButton').onclick = function () { this.connectPort(app) };
-        document.getElementById('refreshButton').onclick = function () { this.refreshGCodeList(app) };
-        document.getElementById('loadButton').onclick = function () { this.loadGCode(app) };
-        document.getElementById('startPauseButton').onclick = function () { this.startPauseJob(app) };
-        document.getElementById('lockUnlockButton').onclick = function () { this.unlockMachine(app) };
-
         app.setDefaultState(app);
-
+        app.setButtonsAction(app);
         app.initCallbacks(app);
 
         app.checkCncjsServer(app); // Checking rn
