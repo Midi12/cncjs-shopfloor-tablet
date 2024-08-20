@@ -193,6 +193,12 @@ var gApp = {
         valueElement.textContent = value.toFixed(3);
     },
 
+    moveAxis: function(app, axis, direction, distance = 1, factor = 1) {
+        app.command(app, 'gcode', 'G91'); // Relative
+        app.command(app, 'gcode', 'G0 ' + axis + (direction * distance * factor));
+        app.command(app, 'gcode', 'G90'); // Absolute
+    },
+
     setSpindleSpeed: function (speed) {
         var spindleElement = document.getElementById('spindleSpeed');
         var valueElement = spindleElement.querySelector('span');
@@ -315,7 +321,19 @@ var gApp = {
         document.getElementById('loadButton').onclick = function () { app.loadGCode(app) };
         document.getElementById('startPauseButton').onclick = function () { app.startPauseJob(app) };
         document.getElementById('lockUnlockButton').onclick = function () { app.unlockMachine(app) };
-        document.getElementById('homeButton').onclick = function () { app.commandHome(app) };
+
+        document.getElementById('probeZButton').onclick = function() {};
+        document.getElementById('yPlusButton').onclick = function() { app.moveAxis(app, 'Y', 1) };
+        document.getElementById('zPlusButton').onclick = function() { app.moveAxis(app, 'Z', 1) };
+        document.getElementById('custom1Button').onclick = function() {};
+        document.getElementById('xMinusButton').onclick = function() { app.moveAxis(app, 'X', -1) };
+        document.getElementById('homeButton').onclick = function() { app.commandHome(app) };
+        document.getElementById('xPlusButton').onclick = function() { app.moveAxis(app, 'X', 1) };
+        document.getElementById('spindleOnOffButton').onclick = function() {};
+        document.getElementById('zeroXYButton').onclick = function() {};
+        document.getElementById('yMinusButton').onclick = function() { app.moveAxis(app, 'Y', -1) };
+        document.getElementById('zMinusButton').onclick = function() { app.moveAxis(app, 'Z', -1) };
+        document.getElementById('custom2Button').onclick = function() {};
     },
 
     initCallbacks: function (app) {
