@@ -25,6 +25,44 @@ var gApp = {
     socket: null,
     apiClient: null,
 
+    toggleCommandList: function () {
+        var commandList = document.getElementById('commandList');
+        commandList.classList.toggle('hidden');
+        document.body.classList.toggle('overflow-hidden');
+    },
+
+    generateCommandButtons: function (app, records) {
+        var commandList = document.getElementById('commandList');
+        commandList.innerHTML = ''; // Clear existing content
+
+        for (var key in records) {
+            if (records.hasOwnProperty(key)) {
+                var record = records[key];
+                var id = record.id;
+                var title = record.title;
+
+                var button = document.createElement('button');
+                button.textContent = title;
+                button.classList.add('bg-gray-700', 'text-white', 'px-4', 'py-2', 'rounded', 'mb-2');
+                button.onclick = (function (id) {
+                    return function () {
+                        app.runCommand(app, id);
+                    };
+                })(id);
+                commandList.appendChild(button);
+            }
+        }
+    },
+
+    runCommand: function (app, id) {
+        app.apiClient.post('/api/commands/run/' + id)
+            .then(data => {
+                app.logger.debug('ran command ' + id);
+                app.logger.debug(data);
+            })
+            .catch(error => app.logger.error(error));
+    },
+
     connectPort: function (app) {
         app.setEnabledProperty('connectButton', false);
         app.selectedPort = document.getElementById('portSelect').value;
@@ -436,19 +474,32 @@ var gApp = {
         app.setButtonsAction(app);
         app.initCallbacks(app);
 
+        app.apiClient.get('/api/commands')
+            .then(data => {
+                app.logger.debug('commands');
+                app.logger.debug(data);
+
+                document.getElementById('commandListButton').onclick = app.toggleCommandList;
+
+                app.generateCommandButtons(app, data.records);
+            })
+            .catch(error => {
+                app.logger.error(error);
+            })
+
         app.apiClient.post('/api/signin')
-        .then(data => {
-            app.logger.debug('signin ok');
-            app.logger.debug(data);
+            .then(data => {
+                app.logger.debug('signin ok');
+                app.logger.debug(data);
 
-            app.setConnectionStatus('cncjsStatus', true);
+                app.setConnectionStatus('cncjsStatus', true);
 
-            app.logger.info('Application initialized.');
-        })
-        .catch(error => {
-            app.logger.error('signin error');
-            app.logger.error(error);
-        });
+                app.logger.info('Application initialized.');
+            })
+            .catch(error => {
+                app.logger.error('signin error');
+                app.logger.error(error);
+            });
     }
 };
 

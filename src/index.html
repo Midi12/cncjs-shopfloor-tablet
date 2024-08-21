@@ -12,8 +12,11 @@
   <script src="/socket.io/socket.io.js"></script>
 </head>
 
-<body class="bg-gray-900 text-white max-h-screen">
+<body class="bg-gray-900 text-white max-h-screen relative">
   <div class="container mx-auto px-2 py-2">
+    <div id="commandList" class="hidden absolute top-100 left-0 right-0 z-50 bg-gray-600 rounded p-4 m-2">
+      <!-- Collapsible list content will be dynamically generated here -->
+    </div>
     <div class="grid grid-cols-12 gap-4 mb-4">
       <div class="col-span-5">
         <select id="portSelect" class="bg-gray-800 text-white px-4 py-2 rounded w-2/6">
@@ -39,7 +42,7 @@
         <span id="swapStat" class="text-gray-400 text-nowrap">Swap: <span class="text-white-500 whitespace-nowrap">---- Mb</span></span>
       </div>
       <div class="col-span-1 text-right">
-        <button class="bg-gray-800 text-white px-4 py-2 rounded"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+        <button id="commandListButton" class="bg-gray-800 text-white px-4 py-2 rounded"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
           <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
         </button>
       </div>
