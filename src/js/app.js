@@ -1,54 +1,29 @@
-function parseParams(str) {
-    return str.split('&').reduce(function (params, param) {
-        if (param) {
-            var paramSplit = param.split('=').map(function (value) {
-                return decodeURIComponent(value.replace('+', ' '));
-            });
-            params[paramSplit[0]] = paramSplit[1];
-        }
-        return params;
-    }, {});
-}
+function getCncData() {
+    // Read the 'cnc' entry from localStorage
+    const cncData = localStorage.getItem('cnc');
 
-var params = parseParams(window.location.search.slice(1));
-var root = window;
-var token = params.token || '';
-if (!token) {
-    try {
-        var cnc = {};
-        cnc = JSON.parse(localStorage.getItem('cnc') || {});
-        cnc.state = cnc.state || {};
-        cnc.state.session = cnc.state.session || {};
-        token = cnc.state.session.token || '';
-        root.cnc.token = token;
-    } catch (err) {
-        // Ignore error
+    if (cncData) {
+        try {
+            // Parse the JSON data
+            const cncObject = JSON.parse(cncData);
+            return cncObject;
+        } catch (error) {
+            console.error('Error parsing CNC data:', error);
+            return null;
+        }
+    } else {
+        console.log('No CNC data found in localStorage.');
+        return null;
     }
 }
-
-// WebSocket
-var socket = root.io.connect('', {
-    query: 'token=' + token
-});
 
 var gApp = {
     selectedPort: null,
     selectedBaudRate: null,
     logger: null,
-
-    checkCncjsServer: function (app) {
-        url = document.location;
-
-        ping = new XMLHttpRequest();
-        ping.onreadystatechange = function () {
-
-            if (ping.readyState == 4) {
-                app.setConnectionStatus('cncjsStatus', ping.status == 200)
-            }
-        }
-        ping.open("GET", url, true);
-        ping.send();
-    },
+    cncjsServerUrl: 'http://127.0.0.1:8000',
+    socket: null,
+    apiClient: null,
 
     connectPort: function (app) {
         app.setEnabledProperty('connectButton', false);
@@ -57,7 +32,7 @@ var gApp = {
 
         app.logger.debug('Selected Baud rate : ' + app.selectedBaudRate);
 
-        socket.emit('open', app.selectedPort, {
+        app.socket.emit('open', app.selectedPort, {
             baudrate: Number(app.selectedBaudRate)
         });
     },
@@ -65,7 +40,7 @@ var gApp = {
     disconnectPort: function (app) {
         app.logger.info('Disconnecting from ' + app.selectedPort);
 
-        socket.emit('close');
+        app.socket.emit('close');
 
         app.setConnectButtonState(app, false);
         app.selectedPort = null;
@@ -93,28 +68,28 @@ var gApp = {
     },
 
     refreshGCodeList: function (app) {
-        socket.emit('gcode:list');
+        app.socket.emit('gcode:list');
     },
 
     loadGCode: function (app) {
         var selectedFile = document.getElementById('gcodeSelect').value;
-        socket.emit('gcode:load', selectedFile);
+        app.socket.emit('gcode:load', selectedFile);
     },
 
     startPauseJob: function (app) {
         var startPauseButton = document.getElementById('startPauseButton');
 
         if (startPauseButton.textContent === 'Start') {
-            socket.emit('gcode:start');
+            app.socket.emit('gcode:start');
             startPauseButton.textContent = 'Pause';
         } else {
-            socket.emit('gcode:pause');
+            app.socket.emit('gcode:pause');
             startPauseButton.textContent = 'Start';
         }
     },
 
     unlockMachine: function (app) {
-        socket.emit('unlock');
+        app.socket.emit('unlock');
     },
 
     setConnectButtonState: function (app, connected) {
@@ -193,10 +168,14 @@ var gApp = {
         valueElement.textContent = value.toFixed(3);
     },
 
-    moveAxis: function(app, axis, direction, distance = 1, factor = 1) {
+    moveAxis: function (app, axis, direction, distance = 0.5, factor = 1) {
         app.command(app, 'gcode', 'G91'); // Relative
         app.command(app, 'gcode', 'G0 ' + axis + (direction * distance * factor));
         app.command(app, 'gcode', 'G90'); // Absolute
+    },
+
+    zeroXY: function (app) {
+        app.command(app, 'gcode', 'G28.3 X0 Y0 Z0');
     },
 
     setSpindleSpeed: function (speed) {
@@ -222,7 +201,7 @@ var gApp = {
 
     setDefaultState: function (app) {
         // Generate list of available ports
-        socket.emit('list');
+        app.socket.emit('list');
 
         // Set connect button to enabled and in connect state
         app.setConnectButtonState(app, false);
@@ -294,20 +273,20 @@ var gApp = {
     //   controller.command('macro:run', '<macro-id>', { /* optional vars */ }, callback)
     // - Load file from a watch directory
     //   controller.command('watchdir:load', '/path/to/file', callback)
-    command: function(app, cmd) {
+    command: function (app, cmd) {
         var args = Array.prototype.slice.call(arguments, 2);
 
         app.logger.debug('port: ' + app.selectedPort + 'command ' + cmd + ' args -> ');
         app.logger.debug(args);
 
-        socket.emit.apply(socket, ['command', app.selectedPort, cmd].concat(args));
+        app.socket.emit.apply(app.socket, ['command', app.selectedPort, cmd].concat(args));
     },
 
-    writeln: function(app, data, context) {
-        socket.emit('writeln', app.selectedPort, data, context);
+    writeln: function (app, data, context) {
+        app.socket.emit('writeln', app.selectedPort, data, context);
     },
 
-    commandHome: function(app) {
+    commandHome: function (app) {
         app.command(app, 'homing');
     },
 
@@ -318,42 +297,42 @@ var gApp = {
         document.getElementById('startPauseButton').onclick = function () { app.startPauseJob(app) };
         document.getElementById('lockUnlockButton').onclick = function () { app.unlockMachine(app) };
 
-        document.getElementById('probeZButton').onclick = function() {};
-        document.getElementById('yPlusButton').onclick = function() { app.moveAxis(app, 'Y', 1) };
-        document.getElementById('zPlusButton').onclick = function() { app.moveAxis(app, 'Z', 1) };
-        document.getElementById('custom1Button').onclick = function() {};
-        document.getElementById('xMinusButton').onclick = function() { app.moveAxis(app, 'X', -1) };
-        document.getElementById('homeButton').onclick = function() { app.commandHome(app) };
-        document.getElementById('xPlusButton').onclick = function() { app.moveAxis(app, 'X', 1) };
-        document.getElementById('spindleOnOffButton').onclick = function() {};
-        document.getElementById('zeroXYButton').onclick = function() {};
-        document.getElementById('yMinusButton').onclick = function() { app.moveAxis(app, 'Y', -1) };
-        document.getElementById('zMinusButton').onclick = function() { app.moveAxis(app, 'Z', -1) };
-        document.getElementById('custom2Button').onclick = function() {};
+        document.getElementById('probeZButton').onclick = function () { };
+        document.getElementById('yPlusButton').onclick = function () { app.moveAxis(app, 'Y', 1) };
+        document.getElementById('zPlusButton').onclick = function () { app.moveAxis(app, 'Z', 1) };
+        document.getElementById('custom1Button').onclick = function () { };
+        document.getElementById('xMinusButton').onclick = function () { app.moveAxis(app, 'X', -1) };
+        document.getElementById('homeButton').onclick = function () { app.commandHome(app) };
+        document.getElementById('xPlusButton').onclick = function () { app.moveAxis(app, 'X', 1) };
+        document.getElementById('spindleOnOffButton').onclick = function () { };
+        document.getElementById('zeroXYButton').onclick = function () { app.zeroXY(app) };
+        document.getElementById('yMinusButton').onclick = function () { app.moveAxis(app, 'Y', -1) };
+        document.getElementById('zMinusButton').onclick = function () { app.moveAxis(app, 'Z', -1) };
+        document.getElementById('custom2Button').onclick = function () { };
     },
 
     initCallbacks: function (app) {
-        socket.on('feeder:status', function(feederStatusObject) {
+        app.socket.on('feeder:status', function (feederStatusObject) {
             //app.logger.debug('feeder:status feederStatusObject');
             //app.logger.debug(feederStatusObject);
         });
 
-        socket.on('sender:status', function(senderStatusObject) {
+        app.socket.on('sender:status', function (senderStatusObject) {
             //app.logger.debug('sender:status senderStatusObject');
             //app.logger.debug(senderStatusObject);
         });
 
-        socket.on('serialport:read', function(readObject) {
+        app.socket.on('serialport:read', function (readObject) {
             //app.logger.debug('serialport:read readObject');
             //app.logger.debug(readObject);
         });
 
-        socket.on('serialport:write', function(writeObject) {
+        app.socket.on('serialport:write', function (writeObject) {
             //app.logger.debug('serialport:write writeObject');
             //app.logger.debug(writeObject);
         });
 
-        socket.on('serialport:list', function (ports) {
+        app.socket.on('serialport:list', function (ports) {
             var portSelect = document.getElementById('portSelect');
             portSelect.innerHTML = '';
 
@@ -382,7 +361,7 @@ var gApp = {
             });
         });
 
-        socket.on('serialport:open', function (portObject) {
+        app.socket.on('serialport:open', function (portObject) {
             //app.logger.debug(portObject);
 
             app.setConnectButtonState(app, true);
@@ -400,7 +379,7 @@ var gApp = {
             app.setPadState(app, true);
         });
 
-        socket.on('serialport:error', function (err) {
+        app.socket.on('serialport:error', function (err) {
             app.logger.error('Connection error to' + selectedPort + ' : ' + err);
             app.setEnabledProperty('connectButton', true);
             app.selectedPort = null;
@@ -416,42 +395,60 @@ var gApp = {
             app.setPadState(app, false);
         });
 
-        socket.on('status', function (status) {
+        app.socket.on('status', function (status) {
             app.setCoordinates('x', status.machine.position.x.toFixed(3));
             app.setCoordinates('y', status.machine.position.y.toFixed(3));
             app.setCoordinates('z', status.machine.position.z.toFixed(3));
             app.setSpindleSpeed(status.spindle.speed);
         });
 
-        socket.on('gcode:list', function (files) {
+        app.socket.on('gcode:list', function (files) {
             app.updateGCodeList(files);
         });
 
-        socket.on('controller:state', function(type, state) {
-            app.logger.info('controller:state ('+type+')');
+        app.socket.on('controller:state', function (type, state) {
+            app.logger.info('controller:state (' + type + ')');
             app.logger.debug(state);
         });
 
-        socket.on('controller:settings', function(type, settings) {
-            app.logger.info('controller:settings ('+type+')');
+        app.socket.on('controller:settings', function (type, settings) {
+            app.logger.info('controller:settings (' + type + ')');
             app.logger.debug(settings);
         });
     },
 
     init: function (app) {
+        const cncData = getCncData();
+        app.state = cncData.state;
+
+        // WebSocket
+        app.socket = window.io.connect('', {
+            query: 'token=' + app.state.session.token
+        });
+
+        app.apiClient = new RestApiClient();
+        app.apiClient.setBaseUrl(app.cncjsServerUrl);
+        app.apiClient.setHeader('Authorization', 'Bearer ' + app.state.session.token);
+
         app.logger = new PrettyLogger('debugLogPanel');
 
         app.setDefaultState(app);
         app.setButtonsAction(app);
         app.initCallbacks(app);
 
-        app.checkCncjsServer(app); // Checking rn
+        app.apiClient.post('/api/signin')
+        .then(data => {
+            app.logger.debug('signin ok');
+            app.logger.debug(data);
 
-        setInterval(() => {
-            app.checkCncjsServer(app);
-        }, 60 * 1000);
+            app.setConnectionStatus('cncjsStatus', true);
 
-        app.logger.info('Application initialized.');
+            app.logger.info('Application initialized.');
+        })
+        .catch(error => {
+            app.logger.error('signin error');
+            app.logger.error(error);
+        });
     }
 };
 
