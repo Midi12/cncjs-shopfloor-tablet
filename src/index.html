@@ -29,18 +29,28 @@
         <button id="connectButton" class="bg-blue-500 text-white px-4 py-2 rounded ml-2">Connect</button>
       </div>
       <div class="col-span-2 mt-0">
-        <span id="portStatus" class="text-gray-400 text-nowrap">Port: <span class="text-white-500 whitespace-nowrap">-</span></span>
-        <span id="cncjsStatus" class="text-gray-400 text-nowrap">CNCjs: <span class="text-white-500 whitespace-nowrap">-</span></span>
+        <span id="portStatus" class="text-gray-400 text-nowrap">Port: <span
+            class="text-white-500 whitespace-nowrap">-</span></span>
+        <span id="cncjsStatus" class="text-gray-400 text-nowrap">CNCjs: <span
+            class="text-white-500 whitespace-nowrap">-</span></span>
       </div>
       <div class="col-span-4 mt-0">
-        <span id="cpuStat" class="text-gray-400 text-nowrap">CPU: <span class="text-white-500 whitespace-nowrap">---- Mhz</span></span>
-        <span id="tempStat" class="text-gray-400 text-nowrap">Temp: <span class="text-white-500 whitespace-nowrap">-- °C</span></span>
-        <span id="memStat" class="text-gray-400 text-nowrap">Mem: <span class="text-white-500 whitespace-nowrap">--- Mb</span></span>
-        <span id="swapStat" class="text-gray-400 text-nowrap">Swap: <span class="text-white-500 whitespace-nowrap">---- Mb</span></span>
+        <span id="cpuStat" class="text-gray-400 text-nowrap">CPU: <span class="text-white-500 whitespace-nowrap">----
+            Mhz</span></span>
+        <span id="tempStat" class="text-gray-400 text-nowrap">Temp: <span class="text-white-500 whitespace-nowrap">--
+            °C</span></span>
+        <span id="memStat" class="text-gray-400 text-nowrap">Mem: <span class="text-white-500 whitespace-nowrap">---
+            Mb</span></span>
+        <span id="swapStat" class="text-gray-400 text-nowrap">Swap: <span class="text-white-500 whitespace-nowrap">----
+            Mb</span></span>
       </div>
       <div class="col-span-1 text-right">
-        <button id="commandListButton" class="bg-gray-800 text-white px-4 py-2 rounded"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+        <button id="commandListButton" class="bg-gray-800 text-white px-4 py-2 rounded"><svg
+            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"
+            class="size-6">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+          </svg>
         </button>
         <div id="commandList" class="hidden absolute top-200 left-0 right-0 z-50 bg-gray-600 rounded p-4 m-2">
           <!-- Collapsible list content will be dynamically generated here -->
@@ -56,7 +66,8 @@
             <span id="zCoordinate" class="text-gray-400 text-nowrap">Z: <span class="text-white">0.000</span></span>
           </div>
           <div class="col-span-2 text-right">
-            <span id="spindleSpeed" class="text-gray-400 text-nowrap">Spindle: <span class="text-white whitespace-nowrap">00000 RPM</span></span>
+            <span id="spindleSpeed" class="text-gray-400 text-nowrap">Spindle: <span
+                class="text-white whitespace-nowrap">00000 RPM</span></span>
           </div>
           <button id="probeZButton" class="bg-gray-800 text-white px-4 py-2 rounded">Probe Z</button>
           <button id="yPlusButton" class="bg-gray-800 text-white px-4 py-2 rounded">Y+</button>
@@ -70,6 +81,30 @@
           <button id="yMinusButton" class="bg-gray-800 text-white px-4 py-2 rounded">Y-</button>
           <button id="zMinusButton" class="bg-gray-800 text-white px-4 py-2 rounded">Z-</button>
           <button id="custom2Button" class="bg-gray-800 text-white px-4 py-2 rounded">Custom</button>
+        </div>
+        <div id="probePanel" class="hidden absolute top-20 left-0 right-0 z-50 bg-gray-600 rounded p-4 m-2">
+          <p class="text-red-700 font-extrabold mb-4">ENSURE PROBE IS ATTACHED !</em></p>
+          <p class="mb-4">Procedure: <em>probe toward workpiece, stop on contact, signal error if failure (G38.2)</em></p>
+          <div class="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label for="probeDepth" class="block mb-1">Probe Depth (mm)</label>
+              <input type="number" id="probeDepth" class="w-full bg-gray-800 text-white px-2 py-1 rounded">
+            </div>
+            <div>
+              <label for="probeFeedrate" class="block mb-1">Probe Feedrate (mm)</label>
+              <input type="number" id="probeFeedrate" class="w-full bg-gray-800 text-white px-2 py-1 rounded">
+            </div>
+            <div>
+              <label for="touchPlateThickness" class="block mb-1">Touch Plate Thickness (mm)</label>
+              <input type="number" id="touchPlateThickness" class="w-full bg-gray-800 text-white px-2 py-1 rounded">
+            </div>
+            <div>
+              <label for="retractionDistance" class="block mb-1">Retraction Distance (mm)</label>
+              <input type="number" id="retractionDistance" class="w-full bg-gray-800 text-white px-2 py-1 rounded">
+            </div>
+          </div>
+          <button id="probePanelButton" class="bg-blue-500 text-white px-4 py-2 rounded">Probe</button>
+          <button id="cancelProbePanelButton" class="bg-red-500 text-white px-4 py-2 rounded">Cancel</button>
         </div>
       </div>
       <div class="col-span-6 bg-gray-800 rounded h-full"></div>

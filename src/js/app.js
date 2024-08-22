@@ -24,6 +24,10 @@ var gApp = {
     cncjsServerUrl: 'http://127.0.0.1:8000',
     socket: null,
     apiClient: null,
+    controller: {
+        state: null,
+        settings: null
+    },
 
     toggleCommandList: function () {
         var commandList = document.getElementById('commandList');
@@ -328,6 +332,80 @@ var gApp = {
         app.command(app, 'homing');
     },
 
+    executeProbe: function (app) {
+        // https://github.com/cncjs/cncjs/blob/b1735c1e3cab191d462d2c5aee567a6e9065ed63/src/app/widgets/Probe/index.jsx#L187
+        
+        var probeDepth = parseFloat(document.getElementById('probeDepth').value);
+        var probeFeedrate = parseFloat(document.getElementById('probeFeedrate').value);
+        var touchPlateThickness = parseFloat(document.getElementById('touchPlateThickness').value);
+        var retractionDistance = parseFloat(document.getElementById('retractionDistance').value);
+
+        const make_gcode = (cmd, params) => {
+            var s = '';
+            for (var letter in params) {
+                if (params.hasOwnProperty(letter)) {
+                    var value = params[letter];
+                    s += letter + value + ' ';
+                }
+            }
+            s = s.trim(); // Remove trailing whitespace
+            return (s.length > 0) ? (cmd + ' ' + s) : cmd;
+        };
+
+        var probeAxis = 'Z';
+        var towardWorkpiece = true;
+        var wcs = app.controller.state.parserstate.modal.wcs;
+        var probeCommand = 'G38.2';
+
+        const mapWCSToP = (wcs) => ({
+            'G54': 1,
+            'G55': 2,
+            'G56': 3,
+            'G57': 4,
+            'G58': 5,
+            'G59': 6
+        }[wcs] || 0);
+
+        const gcodeProbeCommands = [
+            // Probe (use relative distance mode)
+            make_gcode(`; ${probeAxis}-Probe`),
+            make_gcode('G91'),
+            make_gcode(probeCommand, {
+                [probeAxis]: towardWorkpiece ? -probeDepth : probeDepth,
+                F: probeFeedrate
+            }),
+            // Use absolute distance mode
+            make_gcode('G90'),
+
+            // Set the WCS 0 offset
+            make_gcode(`; Set the active WCS ${probeAxis}0`),
+            make_gcode('G10', {
+                L: 20,
+                P: mapWCSToP(wcs),
+                [probeAxis]: touchPlateThickness
+            }),
+
+            // Retract from the touch plate (use relative distance mode)
+            make_gcode('; Retract from the touch plate'),
+            make_gcode('G91'),
+            make_gcode('G0', {
+                [probeAxis]: retractionDistance
+            }),
+            // Use absolute distance mode
+            make_gcode('G90')
+        ];
+
+        app.command(app, 'gcode', gcodeProbeCommands);
+
+        app.toggleProbePanel(app);
+    },
+
+    toggleProbePanel: function (app) {
+        var probePanel = document.getElementById('probePanel');
+        probePanel.classList.toggle('hidden');
+        document.body.classList.toggle('overflow-hidden');
+    },
+
     setButtonsAction: function (app) {
         document.getElementById('connectButton').onclick = function () { app.connectPort(app) };
         document.getElementById('refreshButton').onclick = function () { app.refreshGCodeList(app) };
@@ -335,7 +413,7 @@ var gApp = {
         document.getElementById('startPauseButton').onclick = function () { app.startPauseJob(app) };
         document.getElementById('lockUnlockButton').onclick = function () { app.unlockMachine(app) };
 
-        document.getElementById('probeZButton').onclick = function () { };
+        document.getElementById('probeZButton').onclick = function () { app.toggleProbePanel(app) };
         document.getElementById('yPlusButton').onclick = function () { app.moveAxis(app, 'Y', 1) };
         document.getElementById('zPlusButton').onclick = function () { app.moveAxis(app, 'Z', 1) };
         document.getElementById('custom1Button').onclick = function () { };
@@ -347,6 +425,14 @@ var gApp = {
         document.getElementById('yMinusButton').onclick = function () { app.moveAxis(app, 'Y', -1) };
         document.getElementById('zMinusButton').onclick = function () { app.moveAxis(app, 'Z', -1) };
         document.getElementById('custom2Button').onclick = function () { };
+
+        document.getElementById('probePanelButton').onclick = function () { app.executeProbe(app) };
+        document.getElementById('cancelProbePanelButton').onclick = function () { app.toggleProbePanel(app) };
+
+        document.getElementById('probeDepth').value = 10;
+        document.getElementById('probeFeedrate').value = 20;
+        document.getElementById('touchPlateThickness').value = 12;
+        document.getElementById('retractionDistance').value = 4;
     },
 
     initCallbacks: function (app) {
@@ -447,6 +533,8 @@ var gApp = {
         app.socket.on('controller:state', function (type, state) {
             app.logger.info('controller:state (' + type + ')');
             app.logger.debug(state);
+
+            app.controller.state = state;
         });
 
         app.socket.on('controller:settings', function (type, settings) {
@@ -488,7 +576,7 @@ var gApp = {
                 app.logger.error(error);
             });
 
-            app.apiClient.get('/api/commands')
+        app.apiClient.get('/api/commands')
             .then(data => {
                 // app.logger.debug('commands');
                 // app.logger.debug(data);
