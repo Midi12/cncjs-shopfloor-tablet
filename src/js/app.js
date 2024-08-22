@@ -474,19 +474,6 @@ var gApp = {
         app.setButtonsAction(app);
         app.initCallbacks(app);
 
-        app.apiClient.get('/api/commands')
-            .then(data => {
-                app.logger.debug('commands');
-                app.logger.debug(data);
-
-                document.getElementById('commandListButton').onclick = app.toggleCommandList;
-
-                app.generateCommandButtons(app, data.records);
-            })
-            .catch(error => {
-                app.logger.error(error);
-            })
-
         app.apiClient.post('/api/signin')
             .then(data => {
                 app.logger.debug('signin ok');
@@ -498,6 +485,19 @@ var gApp = {
             })
             .catch(error => {
                 app.logger.error('signin error');
+                app.logger.error(error);
+            });
+
+            app.apiClient.get('/api/commands')
+            .then(data => {
+                // app.logger.debug('commands');
+                // app.logger.debug(data);
+
+                document.getElementById('commandListButton').onclick = app.toggleCommandList;
+
+                app.generateCommandButtons(app, data.records);
+            })
+            .catch(error => {
                 app.logger.error(error);
             });
     }
