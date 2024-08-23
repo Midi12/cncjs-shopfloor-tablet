@@ -29,6 +29,23 @@ var gApp = {
         state: null,
         settings: null
     },
+    workflowState: 'idle',
+    spindleOn: false,
+
+    toggleSpindle: function(app) {
+        var command = '';
+        if (app.spindleOn == false) {
+            command = 'M3 S5000';
+            app.spindleOn = true;
+            app.setSpindleSpeed(5000);
+        } else {
+            command = 'M5';
+            app.spindleOn = false;
+            app.setSpindleSpeed(0);
+        }
+
+        app.command(app, 'gcode', command);
+    },
 
     toggleCommandList: function () {
         var commandList = document.getElementById('commandList');
@@ -98,25 +115,35 @@ var gApp = {
         app.setPadState(app, false);
     },
 
-    updateGCodeList: function (files) {
-        var gcodeSelect = document.getElementById('gcodeSelect');
-        gcodeSelect.innerHTML = '';
+    updateGCodeList: function (app) {
+        app.apiClient.get('/api/watch/files')
+            .then(data => {
+                // app.logger.debug('files');
+                // app.logger.debug(data);
 
-        files.forEach(function (file) {
-            var option = document.createElement('option');
-            option.value = file;
-            option.textContent = file;
-            gcodeSelect.appendChild(option);
-        });
+                var gcodeSelect = document.getElementById('gcodeSelect');
+                gcodeSelect.innerHTML = '';
+
+                data.files.forEach(function (fileEntry) {
+                    var option = document.createElement('option');
+                    option.value = fileEntry.name;
+                    option.textContent = fileEntry.name;
+                    gcodeSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                app.logger.error(error);
+            });
     },
 
     refreshGCodeList: function (app) {
-        app.socket.emit('gcode:list');
+        app.updateGCodeList(app);
     },
 
     loadGCode: function (app) {
         var selectedFile = document.getElementById('gcodeSelect').value;
-        app.socket.emit('gcode:load', selectedFile);
+        
+        app.command(app, 'watchdir:load', selectedFile);
     },
 
     startPauseJob: function (app) {
@@ -423,7 +450,7 @@ var gApp = {
         document.getElementById('xMinusButton').onclick = function () { app.moveAxis(app, 'X', -1) };
         document.getElementById('homeButton').onclick = function () { app.commandHome(app) };
         document.getElementById('xPlusButton').onclick = function () { app.moveAxis(app, 'X', 1) };
-        document.getElementById('spindleOnOffButton').onclick = function () { };
+        document.getElementById('spindleOnOffButton').onclick = function () { app.toggleSpindle(app) };
         document.getElementById('zeroXYButton').onclick = function () { app.zeroXY(app) };
         document.getElementById('yMinusButton').onclick = function () { app.moveAxis(app, 'Y', -1) };
         document.getElementById('zMinusButton').onclick = function () { app.moveAxis(app, 'Z', -1) };
@@ -527,10 +554,6 @@ var gApp = {
             app.setSpindleSpeed(status.spindle.speed);
         });
 
-        app.socket.on('gcode:list', function (files) {
-            app.updateGCodeList(files);
-        });
-
         app.socket.on('controller:state', function (type, state) {
             app.logger.info('controller:state (' + type + ')');
             app.logger.debug(state);
@@ -541,6 +564,15 @@ var gApp = {
         app.socket.on('controller:settings', function (type, settings) {
             app.logger.info('controller:settings (' + type + ')');
             app.logger.debug(settings);
+        });
+
+        app.socket.on('gcode:load', function (file) {
+            app.logger.info('Loaded GCode file ' + file);
+        });
+
+        app.socket.on('workflow:state', function (state) {
+            app.logger.info('workflow:state : ' + state);
+            app.workflowState = state;
         });
     },
 
@@ -590,6 +622,8 @@ var gApp = {
             .catch(error => {
                 app.logger.error(error);
             });
+
+        app.updateGCodeList(app);
     }
 };
 

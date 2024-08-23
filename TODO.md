@@ -1,0 +1,3 @@
+- Set X/Y/Z step value
+- set Spindle RPM value
+- confirm homing procedure
