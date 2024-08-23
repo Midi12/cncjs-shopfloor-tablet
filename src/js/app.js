@@ -21,6 +21,7 @@ var gApp = {
     selectedPort: null,
     selectedBaudRate: null,
     logger: null,
+    grbl_log: null,
     cncjsServerUrl: 'http://127.0.0.1:8000',
     socket: null,
     apiClient: null,
@@ -449,13 +450,11 @@ var gApp = {
         });
 
         app.socket.on('serialport:read', function (readObject) {
-            //app.logger.debug('serialport:read readObject');
-            //app.logger.debug(readObject);
+            app.grbl_log.info('> ' + readObject);
         });
 
         app.socket.on('serialport:write', function (writeObject) {
-            //app.logger.debug('serialport:write writeObject');
-            //app.logger.debug(writeObject);
+            app.grbl_log.info('< ' + writeObject);
         });
 
         app.socket.on('serialport:list', function (ports) {
@@ -559,6 +558,7 @@ var gApp = {
         app.apiClient.setHeader('Authorization', 'Bearer ' + app.state.session.token);
 
         app.logger = new PrettyLogger('debugLogPanel');
+        app.grbl_log = new PrettyLogger('grblLogPanel');
 
         app.setDefaultState(app);
         app.setButtonsAction(app);
