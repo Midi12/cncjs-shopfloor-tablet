@@ -334,7 +334,7 @@ var gApp = {
 
     executeProbe: function (app) {
         // https://github.com/cncjs/cncjs/blob/b1735c1e3cab191d462d2c5aee567a6e9065ed63/src/app/widgets/Probe/index.jsx#L187
-        
+
         var probeDepth = parseFloat(document.getElementById('probeDepth').value);
         var probeFeedrate = parseFloat(document.getElementById('probeFeedrate').value);
         var touchPlateThickness = parseFloat(document.getElementById('touchPlateThickness').value);
@@ -366,9 +366,9 @@ var gApp = {
             'G59': 6
         }[wcs] || 0);
 
-        const gcodeProbeCommands = [
+        const gcodeProbeCommands = Array.from([
             // Probe (use relative distance mode)
-            make_gcode(`; ${probeAxis}-Probe`),
+            //make_gcode(`; ${probeAxis}-Probe`),
             make_gcode('G91'),
             make_gcode(probeCommand, {
                 [probeAxis]: towardWorkpiece ? -probeDepth : probeDepth,
@@ -378,7 +378,7 @@ var gApp = {
             make_gcode('G90'),
 
             // Set the WCS 0 offset
-            make_gcode(`; Set the active WCS ${probeAxis}0`),
+            //make_gcode(`; Set the active WCS ${probeAxis}0`),
             make_gcode('G10', {
                 L: 20,
                 P: mapWCSToP(wcs),
@@ -386,16 +386,18 @@ var gApp = {
             }),
 
             // Retract from the touch plate (use relative distance mode)
-            make_gcode('; Retract from the touch plate'),
+            //make_gcode('; Retract from the touch plate'),
             make_gcode('G91'),
             make_gcode('G0', {
                 [probeAxis]: retractionDistance
             }),
             // Use absolute distance mode
             make_gcode('G90')
-        ];
+        ]);
 
-        app.command(app, 'gcode', gcodeProbeCommands);
+        for (let i = 0; i < gcodeProbeCommands.length; i++) {
+            app.command(app, 'gcode', gcodeProbeCommands[i]);
+        }
 
         app.toggleProbePanel(app);
     },
