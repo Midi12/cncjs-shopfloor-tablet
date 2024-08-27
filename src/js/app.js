@@ -1,28 +1,9 @@
-function getCncData() {
-    // Read the 'cnc' entry from localStorage
-    const cncData = localStorage.getItem('cnc');
-
-    if (cncData) {
-        try {
-            // Parse the JSON data
-            const cncObject = JSON.parse(cncData);
-            return cncObject;
-        } catch (error) {
-            console.error('Error parsing CNC data:', error);
-            return null;
-        }
-    } else {
-        console.log('No CNC data found in localStorage.');
-        return null;
-    }
-}
-
 var gApp = {
     selectedPort: null,
     selectedBaudRate: null,
     logger: null,
     grbl_log: null,
-    cncjsServerUrl: 'http://127.0.0.1:8000',
+    cncjsServerUrl: 'http://localhost:8000',
     socket: null,
     apiClient: null,
     controller: {
@@ -31,8 +12,12 @@ var gApp = {
     },
     workflowState: 'idle',
     spindleOn: false,
+    gcodeJobStarted: false,
+    gcodeJobPaused: false,
+    gcodeLoaded: false,
+    hold: true,
 
-    toggleSpindle: function(app) {
+    toggleSpindle: function (app) {
         var command = '';
         if (app.spindleOn == false) {
             command = 'M3 S5000';
@@ -108,7 +93,7 @@ var gApp = {
         app.setConnectionStatus('portStatus', false);
 
         app.setButtonState('refreshButton', false);
-        app.setButtonState('loadButton', false);
+        app.setButtonState('loadUnloadButton', false);
         app.setButtonState('startPauseButton', false);
         app.setButtonState('lockUnlockButton', false);
 
@@ -136,25 +121,89 @@ var gApp = {
             });
     },
 
+    updateCommands: function (app) {
+        app.apiClient.get('/api/commands')
+            .then(data => {
+                // app.logger.debug('commands');
+                // app.logger.debug(data);
+
+                document.getElementById('commandListButton').onclick = app.toggleCommandList;
+
+                app.generateCommandButtons(app, data.records);
+            })
+            .catch(error => {
+                app.logger.error(error);
+            });
+    },
+
     refreshGCodeList: function (app) {
         app.updateGCodeList(app);
     },
 
-    loadGCode: function (app) {
-        var selectedFile = document.getElementById('gcodeSelect').value;
-        
-        app.command(app, 'watchdir:load', selectedFile);
+    loadUnloadGCode: function (app) {
+        var loadUnloadButton = document.getElementById('loadUnloadButton');
+
+        if (app.gcodeLoaded == true) {
+            app.command(app, 'gcode:unload');
+            app.gcodeLoaded = false;
+            loadUnloadButton.textContent = 'Load';
+
+        } else {
+            var selectedFile = document.getElementById('gcodeSelect').value;
+            app.command(app, 'watchdir:load', selectedFile);
+
+            app.gcodeLoaded = true;
+            loadUnloadButton.textContent = 'Unload';
+        }
     },
 
-    startPauseJob: function (app) {
-        var startPauseButton = document.getElementById('startPauseButton');
+    startStopJob: function (app) {
+        var startStopButton = document.getElementById('startStopButton');
 
-        if (startPauseButton.textContent === 'Start') {
-            app.socket.emit('gcode:start');
-            startPauseButton.textContent = 'Pause';
+        if (app.gcodeJobStarted == true) {
+            app.command(app, 'gcode:stop');
+            app.gcodeJobStarted = false;
+            //app.gcodeJobPaused = false;
+            startStopButton.textContent = 'Start';
+
+            app.setButtonState('pauseResumeButton', false);
         } else {
-            app.socket.emit('gcode:pause');
-            startPauseButton.textContent = 'Start';
+            app.command(app, 'gcode:start');
+            app.gcodeJobStarted = true;
+            app.hold = false;
+            holdUnholdButton.textContent = 'Hold';
+            //app.gcodeJobPaused = false;
+            startStopButton.textContent = 'Stop';
+
+            app.setButtonState('pauseResumeButton', true);
+        }
+    },
+
+    pauseResumeJob: function (app) {
+        var pauseResumeButton = document.getElementById('pauseResumeButton');
+
+        if (app.gcodeJobPaused == true) {
+            app.command(app, 'gcode:resume');
+            app.gcodeJobPaused = false;
+            pauseResumeButton.textContent = 'Pause';
+        } else {
+            app.command(app, 'gcode:pause');
+            app.gcodeJobPaused = true;
+            pauseResumeButton.textContent = 'Resume';
+        }
+    },
+
+    holdUnholdJob: function (app) {
+        var holdUnholdButton = document.getElementById('holdUnholdButton');
+
+        if (app.hold == true) {
+            app.command(app, 'cyclestart');
+            app.hold = false;
+            holdUnholdButton.textContent = 'Hold';
+        } else {
+            app.command(app, 'feedhold');
+            app.hold = true;
+            holdUnholdButton.textContent = 'Unhold';
         }
     },
 
@@ -278,8 +327,9 @@ var gApp = {
 
         // Set refresh, load, start, and lock buttons to disabled state
         app.setButtonState('refreshButton', false);
-        app.setButtonState('loadButton', false);
-        app.setButtonState('startPauseButton', false);
+        app.setButtonState('loadUnloadButton', false);
+        app.setButtonState('startStopButton', false);
+        app.setButtonState('pauseResumeButton', false);
         app.setButtonState('lockUnlockButton', false);
 
         // Set port and cncjs connection status to disconnected
@@ -439,8 +489,10 @@ var gApp = {
     setButtonsAction: function (app) {
         document.getElementById('connectButton').onclick = function () { app.connectPort(app) };
         document.getElementById('refreshButton').onclick = function () { app.refreshGCodeList(app) };
-        document.getElementById('loadButton').onclick = function () { app.loadGCode(app) };
-        document.getElementById('startPauseButton').onclick = function () { app.startPauseJob(app) };
+        document.getElementById('loadUnloadButton').onclick = function () { app.loadUnloadGCode(app) };
+        document.getElementById('startStopButton').onclick = function () { app.startStopJob(app) };
+        document.getElementById('holdUnholdButton').onclick = function () { app.holdUnholdJob(app) };
+        document.getElementById('pauseResumeButton').onclick = function () { app.pauseResumeJob(app) };
         document.getElementById('lockUnlockButton').onclick = function () { app.unlockMachine(app) };
 
         document.getElementById('probeZButton').onclick = function () { app.toggleProbePanel(app) };
@@ -467,21 +519,21 @@ var gApp = {
 
     initCallbacks: function (app) {
         app.socket.on('feeder:status', function (feederStatusObject) {
-            //app.logger.debug('feeder:status feederStatusObject');
-            //app.logger.debug(feederStatusObject);
+            app.logger.debug('feeder:status feederStatusObject');
+            app.logger.debug(feederStatusObject);
         });
 
         app.socket.on('sender:status', function (senderStatusObject) {
-            //app.logger.debug('sender:status senderStatusObject');
-            //app.logger.debug(senderStatusObject);
+            app.logger.debug('sender:status senderStatusObject');
+            app.logger.debug(senderStatusObject);
         });
 
         app.socket.on('serialport:read', function (readObject) {
-            app.grbl_log.info('> ' + readObject);
+            app.grbl_log.info('< ' + readObject);
         });
 
         app.socket.on('serialport:write', function (writeObject) {
-            app.grbl_log.info('< ' + writeObject);
+            app.grbl_log.info('> ' + writeObject);
         });
 
         app.socket.on('serialport:list', function (ports) {
@@ -524,11 +576,17 @@ var gApp = {
             app.setConnectionStatus('portStatus', true);
 
             app.setButtonState('refreshButton', true);
-            app.setButtonState('loadButton', true);
-            app.setButtonState('startPauseButton', true);
+            app.setButtonState('loadUnloadButton', true);
+            app.setButtonState('startStopButton', true);
+            app.setButtonState('pauseResumeButton', false);
+            app.setButtonState('holdUnholdButton', true);
             app.setButtonState('lockUnlockButton', true);
 
             app.setPadState(app, true);
+
+            app.command(app, 'reset');
+            app.writeln('$$');
+            app.writeln('!');
         });
 
         app.socket.on('serialport:error', function (err) {
@@ -540,7 +598,7 @@ var gApp = {
             app.setConnectionStatus('portStatus', false);
 
             app.setButtonState('refreshButton', false);
-            app.setButtonState('loadButton', false);
+            app.setButtonState('loadUnloadButton', false);
             app.setButtonState('startPauseButton', false);
             app.setButtonState('lockUnlockButton', false);
 
@@ -566,8 +624,12 @@ var gApp = {
             app.logger.debug(settings);
         });
 
-        app.socket.on('gcode:load', function (file) {
-            app.logger.info('Loaded GCode file ' + file);
+        app.socket.on('controller:ready', function () {
+            app.logger.info('controller:ready');
+        });
+
+        app.socket.on('gcode:load', function (file, gcode) {
+            app.logger.info('Loaded GCode file ' + file + ' (size: ' + gcode.length + ' bytes)');
         });
 
         app.socket.on('workflow:state', function (state) {
@@ -577,29 +639,37 @@ var gApp = {
     },
 
     init: function (app) {
-        const cncData = getCncData();
-        app.state = cncData.state;
-
-        // WebSocket
-        app.socket = window.io.connect('', {
-            query: 'token=' + app.state.session.token
-        });
+        app.state = {
+            session: null
+        };
 
         app.apiClient = new RestApiClient();
         app.apiClient.setBaseUrl(app.cncjsServerUrl);
-        app.apiClient.setHeader('Authorization', 'Bearer ' + app.state.session.token);
 
         app.logger = new PrettyLogger('debugLogPanel');
         app.grbl_log = new PrettyLogger('grblLogPanel');
-
-        app.setDefaultState(app);
-        app.setButtonsAction(app);
-        app.initCallbacks(app);
 
         app.apiClient.post('/api/signin')
             .then(data => {
                 app.logger.debug('signin ok');
                 app.logger.debug(data);
+
+                app.state.session = data;
+
+                app.apiClient.setHeader('Authorization', 'Bearer ' + app.state.session.token);
+
+                // WebSocket
+                app.socket = window.io.connect('', {
+                    query: 'token=' + app.state.session.token
+                });
+
+                app.setDefaultState(app);
+                app.setButtonsAction(app);
+                app.initCallbacks(app);
+
+                app.updateGCodeList(app);
+
+                app.updateCommands(app);
 
                 app.setConnectionStatus('cncjsStatus', true);
 
@@ -609,21 +679,6 @@ var gApp = {
                 app.logger.error('signin error');
                 app.logger.error(error);
             });
-
-        app.apiClient.get('/api/commands')
-            .then(data => {
-                // app.logger.debug('commands');
-                // app.logger.debug(data);
-
-                document.getElementById('commandListButton').onclick = app.toggleCommandList;
-
-                app.generateCommandButtons(app, data.records);
-            })
-            .catch(error => {
-                app.logger.error(error);
-            });
-
-        app.updateGCodeList(app);
     }
 };
 
