@@ -22,11 +22,9 @@ var gApp = {
         if (app.spindleOn == false) {
             command = 'M3 S5000';
             app.spindleOn = true;
-            app.setSpindleSpeed(5000);
         } else {
             command = 'M5';
             app.spindleOn = false;
-            app.setSpindleSpeed(0);
         }
 
         app.command(app, 'gcode', command);
@@ -94,6 +92,7 @@ var gApp = {
 
         app.setButtonState('refreshButton', false);
         app.setButtonState('loadUnloadButton', false);
+        app.setButtonState('holdUnholdButton', false);
         app.setButtonState('startPauseButton', false);
         app.setButtonState('lockUnlockButton', false);
 
@@ -284,7 +283,7 @@ var gApp = {
     setCoordinates: function (axis, value) {
         var coordinatesElement = document.getElementById(axis + 'Coordinate');
         var valueElement = coordinatesElement.querySelector('span');
-        valueElement.textContent = value.toFixed(3);
+        valueElement.textContent = value;
     },
 
     moveAxis: function (app, axis, direction, distance = 0.5, factor = 1) {
@@ -328,6 +327,7 @@ var gApp = {
         // Set refresh, load, start, and lock buttons to disabled state
         app.setButtonState('refreshButton', false);
         app.setButtonState('loadUnloadButton', false);
+        app.setButtonState('holdUnholdButton', false);
         app.setButtonState('startStopButton', false);
         app.setButtonState('pauseResumeButton', false);
         app.setButtonState('lockUnlockButton', false);
@@ -599,17 +599,11 @@ var gApp = {
 
             app.setButtonState('refreshButton', false);
             app.setButtonState('loadUnloadButton', false);
+            app.setButtonState('holdUnholdButton', false);
             app.setButtonState('startPauseButton', false);
             app.setButtonState('lockUnlockButton', false);
 
             app.setPadState(app, false);
-        });
-
-        app.socket.on('status', function (status) {
-            app.setCoordinates('x', status.machine.position.x.toFixed(3));
-            app.setCoordinates('y', status.machine.position.y.toFixed(3));
-            app.setCoordinates('z', status.machine.position.z.toFixed(3));
-            app.setSpindleSpeed(status.spindle.speed);
         });
 
         app.socket.on('controller:state', function (type, state) {
@@ -617,6 +611,11 @@ var gApp = {
             app.logger.debug(state);
 
             app.controller.state = state;
+
+            app.setCoordinates('x', app.controller.state.status.wpos.x);
+            app.setCoordinates('y', app.controller.state.status.wpos.y);
+            app.setCoordinates('z', app.controller.state.status.wpos.z);
+            app.setSpindleSpeed(app.controller.state.status.spindle);
         });
 
         app.socket.on('controller:settings', function (type, settings) {
