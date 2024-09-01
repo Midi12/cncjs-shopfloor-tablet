@@ -10,6 +10,8 @@
   <script src="dependencies/pretty-logger/src/pretty-logger.js"></script>
   <script src="dependencies/rest-api-client/rest-api-client.js"></script>
   <script src="/socket.io/socket.io.js"></script>
+  <script src="js/lib/simple-toolpath.js"></script>
+  <script src="js/lib/toolpath-displayer.js"></script>
 </head>
 
 <body class="bg-gray-900 text-white max-h-screen relative">
@@ -107,7 +109,9 @@
           <button id="cancelProbePanelButton" class="bg-red-500 text-white px-4 py-2 rounded">Cancel</button>
         </div>
       </div>
-      <div class="col-span-6 bg-gray-800 rounded h-full"></div>
+      <div class="col-span-6 bg-gray-800 rounded h-full">
+        <canvas id="toolpathCanvas" class="previewer" width="100%" height="100%"></canvas>
+      </div>
     </div>
     <div class="grid grid-cols-8 gap-4 mb-4">
       <div class="col-span-2">
@@ -131,7 +135,7 @@
         <button id="holdUnholdButton" class="bg-gray-800 text-white px-4 py-2 rounded w-full">Unhold</button>
       </div>
       <div class="col-span-1">
-        <button id="lockUnlockButton" class="bg-gray-800 text-white px-4 py-2 rounded w-full">Lock</button>
+        <button id="resetButton" class="bg-gray-800 text-white px-4 py-2 rounded w-full">Reset</button>
       </div>
     </div>
     <div class="grid grid-cols-2 gap-4">

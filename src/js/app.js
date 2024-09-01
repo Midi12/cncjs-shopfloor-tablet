@@ -16,6 +16,7 @@ var gApp = {
     gcodeJobPaused: false,
     gcodeLoaded: false,
     hold: true,
+    displayer: null,
 
     toggleSpindle: function (app) {
         var command = '';
@@ -94,7 +95,7 @@ var gApp = {
         app.setButtonState('loadUnloadButton', false);
         app.setButtonState('holdUnholdButton', false);
         app.setButtonState('startPauseButton', false);
-        app.setButtonState('lockUnlockButton', false);
+        app.setButtonState('resetButton', false);
 
         app.setPadState(app, false);
     },
@@ -206,8 +207,8 @@ var gApp = {
         }
     },
 
-    unlockMachine: function (app) {
-        app.socket.emit('unlock');
+    resetMachine: function (app) {
+        app.command(app, 'reset');
     },
 
     setConnectButtonState: function (app, connected) {
@@ -330,7 +331,7 @@ var gApp = {
         app.setButtonState('holdUnholdButton', false);
         app.setButtonState('startStopButton', false);
         app.setButtonState('pauseResumeButton', false);
-        app.setButtonState('lockUnlockButton', false);
+        app.setButtonState('resetButton', false);
 
         // Set port and cncjs connection status to disconnected
         app.setConnectionStatus('portStatus', false);
@@ -493,7 +494,7 @@ var gApp = {
         document.getElementById('startStopButton').onclick = function () { app.startStopJob(app) };
         document.getElementById('holdUnholdButton').onclick = function () { app.holdUnholdJob(app) };
         document.getElementById('pauseResumeButton').onclick = function () { app.pauseResumeJob(app) };
-        document.getElementById('lockUnlockButton').onclick = function () { app.unlockMachine(app) };
+        document.getElementById('resetButton').onclick = function () { app.resetMachine(app) };
 
         document.getElementById('probeZButton').onclick = function () { app.toggleProbePanel(app) };
         document.getElementById('yPlusButton').onclick = function () { app.moveAxis(app, 'Y', 1) };
@@ -580,13 +581,11 @@ var gApp = {
             app.setButtonState('startStopButton', true);
             app.setButtonState('pauseResumeButton', false);
             app.setButtonState('holdUnholdButton', true);
-            app.setButtonState('lockUnlockButton', true);
+            app.setButtonState('resetButton', true);
 
             app.setPadState(app, true);
 
             app.command(app, 'reset');
-            app.writeln('$$');
-            app.writeln('!');
         });
 
         app.socket.on('serialport:error', function (err) {
@@ -601,7 +600,7 @@ var gApp = {
             app.setButtonState('loadUnloadButton', false);
             app.setButtonState('holdUnholdButton', false);
             app.setButtonState('startPauseButton', false);
-            app.setButtonState('lockUnlockButton', false);
+            app.setButtonState('resetButton', false);
 
             app.setPadState(app, false);
         });
@@ -616,6 +615,8 @@ var gApp = {
             app.setCoordinates('y', app.controller.state.status.wpos.y);
             app.setCoordinates('z', app.controller.state.status.wpos.z);
             app.setSpindleSpeed(app.controller.state.status.spindle);
+
+            //app.displayer.reDrawTool(app.controller.state.parserstate.modal, app.controller.state.status.mpos);
         });
 
         app.socket.on('controller:settings', function (type, settings) {
@@ -629,6 +630,8 @@ var gApp = {
 
         app.socket.on('gcode:load', function (file, gcode) {
             app.logger.info('Loaded GCode file ' + file + ' (size: ' + gcode.length + ' bytes)');
+
+            //app.displayer.showToolpath(gcode, app.controller.state.status.wpos, app.controller.state.status.mpos)
         });
 
         app.socket.on('workflow:state', function (state) {
@@ -638,6 +641,7 @@ var gApp = {
     },
 
     init: function (app) {
+        //app.displayer = new ToolpathDisplayer( "toolpathCanvas" );
         app.state = {
             session: null
         };
