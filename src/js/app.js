@@ -512,7 +512,7 @@ var gApp = {
         document.getElementById('probePanelButton').onclick = function () { app.executeProbe(app) };
         document.getElementById('cancelProbePanelButton').onclick = function () { app.toggleProbePanel(app) };
 
-        document.getElementById('probeDepth').value = 10;
+        document.getElementById('probeDepth').value = 100;
         document.getElementById('probeFeedrate').value = 20;
         document.getElementById('touchPlateThickness').value = 12;
         document.getElementById('retractionDistance').value = 4;
@@ -614,9 +614,10 @@ var gApp = {
             app.setCoordinates('x', app.controller.state.status.wpos.x);
             app.setCoordinates('y', app.controller.state.status.wpos.y);
             app.setCoordinates('z', app.controller.state.status.wpos.z);
-            app.setSpindleSpeed(app.controller.state.status.spindle);
+            if (app.controller.state.status.spindle)
+                app.setSpindleSpeed(app.controller.state.status.spindle.toFixed(3));
 
-            //app.displayer.reDrawTool(app.controller.state.parserstate.modal, app.controller.state.status.mpos);
+            app.displayer.drawTool(app.controller.state.parserstate.modal, app.controller.state.status.mpos);
         });
 
         app.socket.on('controller:settings', function (type, settings) {
@@ -631,7 +632,7 @@ var gApp = {
         app.socket.on('gcode:load', function (file, gcode) {
             app.logger.info('Loaded GCode file ' + file + ' (size: ' + gcode.length + ' bytes)');
 
-            //app.displayer.showToolpath(gcode, app.controller.state.status.wpos, app.controller.state.status.mpos)
+            app.displayer.drawToolpath(gcode, app.controller.state.status.wpos, app.controller.state.status.mpos)
         });
 
         app.socket.on('workflow:state', function (state) {
@@ -641,7 +642,7 @@ var gApp = {
     },
 
     init: function (app) {
-        //app.displayer = new ToolpathDisplayer( "toolpathCanvas" );
+        app.displayer = new ToolpathDisplayer( "toolpathCanvas" );
         app.state = {
             session: null
         };
