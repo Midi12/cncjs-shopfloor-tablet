@@ -16,7 +16,7 @@ var gApp = {
     gcodeJobPaused: false,
     gcodeLoaded: false,
     hold: true,
-    displayer: null,
+    //displayer: null,
 
     toggleSpindle: function (app) {
         var command = '';
@@ -142,16 +142,22 @@ var gApp = {
 
     loadUnloadGCode: function (app) {
         var loadUnloadButton = document.getElementById('loadUnloadButton');
-
+    
         if (app.gcodeLoaded == true) {
             app.command(app, 'gcode:unload');
             app.gcodeLoaded = false;
             loadUnloadButton.textContent = 'Load';
-
+            
+            // Clear the canvas
+            if (app.displayer) {
+                app.displayer.clear();
+                app.displayer.transformCanvas(); // Redraw the empty canvas with grid/origin
+            }
+    
         } else {
             var selectedFile = document.getElementById('gcodeSelect').value;
             app.command(app, 'watchdir:load', selectedFile);
-
+    
             app.gcodeLoaded = true;
             loadUnloadButton.textContent = 'Unload';
         }
@@ -514,7 +520,7 @@ var gApp = {
 
         document.getElementById('probeDepth').value = 100;
         document.getElementById('probeFeedrate').value = 20;
-        document.getElementById('touchPlateThickness').value = 12;
+        document.getElementById('touchPlateThickness').value = 15;
         document.getElementById('retractionDistance').value = 4;
     },
 
@@ -608,16 +614,28 @@ var gApp = {
         app.socket.on('controller:state', function (type, state) {
             app.logger.info('controller:state (' + type + ')');
             app.logger.debug(state);
-
+        
             app.controller.state = state;
-
+        
             app.setCoordinates('x', app.controller.state.status.wpos.x);
             app.setCoordinates('y', app.controller.state.status.wpos.y);
             app.setCoordinates('z', app.controller.state.status.wpos.z);
-            if (app.controller.state.status.spindle)
+            if (app.controller.state.status.spindle) {
                 app.setSpindleSpeed(app.controller.state.status.spindle.toFixed(3));
-
-            app.displayer.drawTool(app.controller.state.parserstate.modal, app.controller.state.status.mpos);
+            }
+        
+            // Update tool position without redrawing the entire path
+            if (app.displayer && app.controller.state.status.wpos && app.controller.state.status.mpos) {
+                const factor = app.displayer.units === 'G20' ? 25.4 : 1.0;
+                const wpos = {
+                    x: app.controller.state.status.wpos.x * factor,
+                    y: app.controller.state.status.wpos.y * factor,
+                    z: app.controller.state.status.wpos.z * factor
+                };
+        
+                // Update just the tool position, passing empty string for gcode to prevent path redraw
+                app.displayer.drawToolpath('', wpos, app.controller.state.status.mpos);
+            }
         });
 
         app.socket.on('controller:settings', function (type, settings) {
@@ -631,8 +649,17 @@ var gApp = {
 
         app.socket.on('gcode:load', function (file, gcode) {
             app.logger.info('Loaded GCode file ' + file + ' (size: ' + gcode.length + ' bytes)');
-
-            app.displayer.drawToolpath(gcode, app.controller.state.status.wpos, app.controller.state.status.mpos)
+            
+            if (app.displayer && app.controller.state && app.controller.state.status) {
+                const factor = app.displayer.units === 'G20' ? 25.4 : 1.0;
+                const wpos = {
+                    x: app.controller.state.status.wpos.x * factor,
+                    y: app.controller.state.status.wpos.y * factor,
+                    z: app.controller.state.status.wpos.z * factor
+                };
+                
+                app.displayer.drawToolpath(gcode, wpos, app.controller.state.status.mpos);
+            }
         });
 
         app.socket.on('workflow:state', function (state) {

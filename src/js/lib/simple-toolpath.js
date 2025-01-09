@@ -683,13 +683,19 @@ var Toolpath = function () {
             }
         };
 
-        var _options = _extends({}, options),
-            position = _options.position,
-            modal = _options.modal,
-            _options$addLine = _options.addLine,
-            addLine = _options$addLine === undefined ? noop : _options$addLine,
-            _options$addArcCurve = _options.addArcCurve,
-            addArcCurve = _options$addArcCurve === undefined ? noop : _options$addArcCurve;
+        // var _options = _extends({}, options),
+        //     position = _options.position,
+        //     modal = _options.modal,
+        //     _options$addLine = _options.addLine,
+        //     addLine = _options$addLine === undefined ? noop : _options$addLine,
+        //     _options$addArcCurve = _options.addArcCurve,
+        //     addArcCurve = _options$addArcCurve === undefined ? noop : _options$addArcCurve;
+
+        var position = options.position;
+        var modal = options.modal;
+        var addLine = options.addLine;
+        var addArcCurve = options.addArcCurve;
+        var bbox = options.bbox;
 
         // Position
 
@@ -714,7 +720,7 @@ var Toolpath = function () {
         });
         this.setModal(nextModal);
 
-        this.fn = { addLine: addLine, addArcCurve: addArcCurve };
+        this.fn = { bbox: bbox, addLine: addLine, addArcCurve: addArcCurve };
 
         var toolpath = new Interpreter({ handlers: this.handlers });
         toolpath.getPosition = function () {
