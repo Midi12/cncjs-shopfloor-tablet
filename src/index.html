@@ -109,6 +109,33 @@
           <button id="probePanelButton" class="bg-blue-500 text-white px-4 py-2 rounded">Probe</button>
           <button id="cancelProbePanelButton" class="bg-red-500 text-white px-4 py-2 rounded">Cancel</button>
         </div>
+        <div id="stepPanel" class="hidden absolute top-20 left-0 right-0 z-50 bg-gray-600 rounded p-4 m-2">
+          <div class="mb-4">
+            <label for="motorStep" class="block mb-1">Motor Step (mm)</label>
+            <input type="number" id="motorStep" step="0.25" min="0.25" value="0.5" class="w-full bg-gray-800 text-white px-2 py-1 rounded">
+          </div>
+          <button id="saveStepButton" class="bg-blue-500 text-white px-4 py-2 rounded">Save</button>
+          <button id="cancelStepButton" class="bg-red-500 text-white px-4 py-2 rounded ml-2">Cancel</button>
+        </div>
+        <div id="coordPanel" class="hidden absolute top-20 left-0 right-0 z-50 bg-gray-600 rounded p-4 m-2">
+          <h3 class="text-lg font-bold mb-4">Move to Absolute Position</h3>
+          <div class="grid grid-cols-3 gap-4 mb-4">
+            <div>
+              <label for="targetX" class="block mb-1">X Position (mm)</label>
+              <input type="number" id="targetX" step="0.1" value="0" class="w-full bg-gray-800 text-white px-2 py-1 rounded">
+            </div>
+            <div>
+              <label for="targetY" class="block mb-1">Y Position (mm)</label>
+              <input type="number" id="targetY" step="0.1" value="0" class="w-full bg-gray-800 text-white px-2 py-1 rounded">
+            </div>
+            <div>
+              <label for="targetZ" class="block mb-1">Z Position (mm)</label>
+              <input type="number" id="targetZ" step="0.1" value="0" class="w-full bg-gray-800 text-white px-2 py-1 rounded">
+            </div>
+          </div>
+          <button id="goToCoordButton" class="bg-blue-500 text-white px-4 py-2 rounded">Go</button>
+          <button id="cancelCoordButton" class="bg-red-500 text-white px-4 py-2 rounded ml-2">Cancel</button>
+        </div>
       </div>
       <div class="col-span-6 bg-gray-800 rounded h-full relative">
         <canvas id="toolpathCanvas" class="previewer absolute inset-0" width="100%" height="100%"></canvas>

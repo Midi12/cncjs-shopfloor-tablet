@@ -17,6 +17,20 @@ var gApp = {
     gcodeLoaded: false,
     hold: true,
     //displayer: null,
+    motorStep: 0.5,  // Default step size
+
+    toggleCoordPanel: function (app) {
+        var coordPanel = document.getElementById('coordPanel');
+        coordPanel.classList.toggle('hidden');
+        document.body.classList.toggle('overflow-hidden');
+        
+        // Update input fields with current position when opening
+        if (!coordPanel.classList.contains('hidden') && app.controller.state) {
+            document.getElementById('targetX').value = app.controller.state.status.wpos.x;
+            document.getElementById('targetY').value = app.controller.state.status.wpos.y;
+            document.getElementById('targetZ').value = app.controller.state.status.wpos.z;
+        }
+    },
 
     toggleSpindle: function (app) {
         var command = '';
@@ -41,20 +55,37 @@ var gApp = {
         var commandList = document.getElementById('commandList');
         commandList.innerHTML = ''; // Clear existing content
 
+        app.logger.debug(records);
+
+        // Add separator if there are regular commands
+        /*if (records && Object.keys(records).length > 0) {
+            var separator = document.createElement('hr');
+            separator.classList.add('my-4', 'border-gray-600');
+            commandList.appendChild(separator);
+        }*/
+
+        var btnReload = document.createElement('button');
+        btnReload.textContent = 'Reload';
+        btnReload.classList.add('bg-gray-700', 'text-white', 'px-4', 'py-2', 'rounded', 'mb-2', 'mr-2');
+        btnReload.onclick = (function () {
+            return function () {
+                window.location.reload();
+            };
+        })();
+        commandList.appendChild(btnReload);
+
+        // Then add regular commands
         for (var key in records) {
             if (records.hasOwnProperty(key)) {
                 var record = records[key];
-                var id = record.id;
-                var title = record.title;
-
                 var button = document.createElement('button');
-                button.textContent = title;
-                button.classList.add('bg-gray-700', 'text-white', 'px-4', 'py-2', 'rounded', 'mb-2');
+                button.textContent = record.title;
+                button.classList.add('bg-gray-700', 'text-white', 'px-4', 'py-2', 'rounded', 'mb-2', 'mr-2');
                 button.onclick = (function (id) {
                     return function () {
                         app.runCommand(app, id);
                     };
-                })(id);
+                })(record.id);
                 commandList.appendChild(button);
             }
         }
@@ -293,9 +324,21 @@ var gApp = {
         valueElement.textContent = value;
     },
 
-    moveAxis: function (app, axis, direction, distance = 0.5, factor = 1) {
+    toggleStepPanel: function (app) {
+        var stepPanel = document.getElementById('stepPanel');
+        stepPanel.classList.toggle('hidden');
+        document.body.classList.toggle('overflow-hidden');
+    },
+
+    moveToCoordinate: function (app, x, y, z) {
+        // Move to the specified absolute coordinates
+        app.command(app, 'gcode', 'G90'); // Ensure absolute positioning
+        app.command(app, 'gcode', `G0 X${x} Y${y} Z${z}`);
+    },
+
+    moveAxis: function (app, axis, direction, factor = 1) {
         app.command(app, 'gcode', 'G91'); // Relative
-        app.command(app, 'gcode', 'G0 ' + axis + (direction * distance * factor));
+        app.command(app, 'gcode', 'G0 ' + axis + (direction * app.motorStep * factor));
         app.command(app, 'gcode', 'G90'); // Absolute
     },
 
@@ -522,6 +565,42 @@ var gApp = {
         document.getElementById('probeFeedrate').value = 20;
         document.getElementById('touchPlateThickness').value = 15;
         document.getElementById('retractionDistance').value = 4;
+
+        document.getElementById('custom1Button').textContent = 'Set Step';
+        document.getElementById('custom1Button').onclick = function () { app.toggleStepPanel(app) };
+
+        document.getElementById('saveStepButton').onclick = function () {
+            var newStep = parseFloat(document.getElementById('motorStep').value);
+            if (newStep >= 0.25) {  // Ensure minimum step size
+                app.motorStep = newStep;
+                app.toggleStepPanel(app);
+            }
+        };
+
+        document.getElementById('cancelStepButton').onclick = function () {
+            document.getElementById('motorStep').value = app.motorStep;  // Reset to current value
+            app.toggleStepPanel(app);
+        };
+
+        document.getElementById('custom2Button').textContent = 'Go To';
+        document.getElementById('custom2Button').onclick = function () { app.toggleCoordPanel(app) };
+
+        document.getElementById('goToCoordButton').onclick = function () {
+            var targetX = parseFloat(document.getElementById('targetX').value);
+            var targetY = parseFloat(document.getElementById('targetY').value);
+            var targetZ = parseFloat(document.getElementById('targetZ').value);
+
+            if (!isNaN(targetX) && !isNaN(targetY) && !isNaN(targetZ)) {
+                app.moveToCoordinate(app, targetX, targetY, targetZ);
+                app.toggleCoordPanel(app);
+            } else {
+                app.logger.error('Invalid coordinate values');
+            }
+        };
+        
+        document.getElementById('cancelCoordButton').onclick = function () {
+            app.toggleCoordPanel(app);
+        };
     },
 
     initCallbacks: function (app) {
@@ -592,6 +671,10 @@ var gApp = {
             app.setPadState(app, true);
 
             app.command(app, 'reset');
+        });
+
+        app.socket.on('error', function (err) {
+            app.logger.error(err);
         });
 
         app.socket.on('serialport:error', function (err) {
